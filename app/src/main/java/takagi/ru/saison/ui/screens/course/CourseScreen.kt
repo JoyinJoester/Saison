@@ -30,7 +30,8 @@ import takagi.ru.saison.domain.model.CoursePeriod
 import takagi.ru.saison.domain.model.WeekPattern
 import takagi.ru.saison.ui.components.CourseCard
 import takagi.ru.saison.ui.components.EditCourseSheet
-import takagi.ru.saison.ui.components.ExportCoursesDialog
+// import takagi.ru.saison.ui.components.ExportCoursesDialog
+// import takagi.ru.saison.ui.components.ExportSuccessDialog
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.format.TextStyle
@@ -64,7 +65,6 @@ fun CourseScreen(
     var showAddSheet by remember { mutableStateOf(false) }
     var showSettingsSheet by remember { mutableStateOf(false) }
     var showSemesterSettingsSheet by remember { mutableStateOf(false) }
-    var showExportDialog by remember { mutableStateOf(false) }
     var courseToEdit by remember { mutableStateOf<Course?>(null) }
     
     // 文件选择器 - 用于导入ICS文件
@@ -92,6 +92,45 @@ fun CourseScreen(
                     android.util.Log.e("CourseScreen", "Failed to read file", e)
                 }
             }
+        }
+    }
+    
+    // 文件保存器 - 用于导出JSON文件（使用SAF）
+    val exportLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/json")
+    ) { uri: Uri? ->
+        uri?.let {
+            coroutineScope.launch {
+                val exportOptions = viewModel.exportOptions.value
+                if (exportOptions != null) {
+                    viewModel.exportToUri(it, exportOptions.semesterIds)
+                }
+            }
+        }
+    }
+    
+    // Snackbar支持
+    val snackbarHostState = remember { SnackbarHostState() }
+    
+    // 监听导出状态
+    val exportState by viewModel.exportState.collectAsState()
+    LaunchedEffect(exportState) {
+        when (val state = exportState) {
+            is ExportState.Success -> {
+                snackbarHostState.showSnackbar(
+                    message = "导出成功",
+                    duration = SnackbarDuration.Short
+                )
+                viewModel.resetExportState()
+            }
+            is ExportState.Error -> {
+                snackbarHostState.showSnackbar(
+                    message = "导出失败: ${state.message}",
+                    duration = SnackbarDuration.Long
+                )
+                viewModel.resetExportState()
+            }
+            else -> {}
         }
     }
     
@@ -133,6 +172,9 @@ fun CourseScreen(
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary
             )
+        },
+        snackbarHost = {
+            SnackbarHost(hostState = snackbarHostState)
         }
     ) { paddingValues ->
         Column(
@@ -149,7 +191,10 @@ fun CourseScreen(
                 onSettingsClick = { showSettingsSheet = true },
                 onSemesterSettingsClick = { showSemesterSettingsSheet = true },
                 onImportClick = { importLauncher.launch(arrayOf("text/calendar", "text/x-vcalendar", "*/*")) },
-                onExportClick = { showExportDialog = true }
+                onExportClick = {
+                    // 显示导出对话框
+                    viewModel.showExportDialog()
+                }
             )
 
             // Week Days Header
@@ -263,20 +308,41 @@ fun CourseScreen(
         )
     }
     
-    if (showExportDialog) {
-        ExportCoursesDialog(
-            onDismiss = { showExportDialog = false },
-            onExport = { fileName -> showExportDialog = false },
-            isLoading = false
-        )
-    }
-    
     if (showWeekSelectorSheet) {
         takagi.ru.saison.ui.components.WeekSelectorBottomSheet(
             currentWeek = currentWeek,
             totalWeeks = courseSettings.totalWeeks,
             onWeekSelected = { week -> viewModel.selectWeek(week) },
             onDismiss = { viewModel.hideWeekSelectorSheet() }
+        )
+    }
+    
+    // 导出对话框
+    val showExportDialog by viewModel.showExportDialog.collectAsState()
+    val allSemesters by viewModel.allSemesters.collectAsState()
+    
+    if (showExportDialog) {
+        takagi.ru.saison.ui.components.ExportDialog(
+            semesters = allSemesters,
+            currentSemesterId = currentSemesterId,
+            onDismiss = { viewModel.dismissExportDialog() },
+            onExport = { options ->
+                viewModel.dismissExportDialog()
+                coroutineScope.launch {
+                    // 保存导出选项
+                    viewModel.saveExportOptions(options.semesterIds)
+                    
+                    // 获取建议的文件名
+                    val fileName = if (options.semesterIds.size == 1) {
+                        viewModel.getSuggestedFileName(options.semesterIds.first())
+                    } else {
+                        "课程表_${System.currentTimeMillis()}.json"
+                    }
+                    
+                    // 启动文件选择器
+                    exportLauncher.launch(fileName)
+                }
+            }
         )
     }
 }
@@ -325,7 +391,10 @@ fun CourseHeader(
                     Icon(Icons.Default.Today, contentDescription = "Today", tint = MaterialTheme.colorScheme.onSecondaryContainer)
                 }
                 IconButton(onClick = onImportClick) {
-                    Icon(Icons.Default.FileUpload, contentDescription = "Import", tint = MaterialTheme.colorScheme.onSecondaryContainer)
+                    Icon(Icons.Default.FileDownload, contentDescription = "Import", tint = MaterialTheme.colorScheme.onSecondaryContainer)
+                }
+                IconButton(onClick = onExportClick) {
+                    Icon(Icons.Default.FileUpload, contentDescription = "Export", tint = MaterialTheme.colorScheme.onSecondaryContainer)
                 }
                 IconButton(onClick = onSettingsClick) {
                     Icon(Icons.Default.Settings, contentDescription = "Settings", tint = MaterialTheme.colorScheme.onSecondaryContainer)

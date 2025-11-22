@@ -1,192 +1,164 @@
 package takagi.ru.saison.ui.screens.course
 
 import android.net.Uri
-import androidx.compose.ui.graphics.Color
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import takagi.ru.saison.data.ics.IcsException
-import takagi.ru.saison.domain.model.Course
-import takagi.ru.saison.domain.model.CoursePeriod
-import takagi.ru.saison.domain.model.TimeMatchingStrategy
-import takagi.ru.saison.domain.usecase.IcsImportUseCase
-import takagi.ru.saison.data.repository.CourseRepository
+import takagi.ru.saison.domain.model.courseexport.SemesterExportData
+import takagi.ru.saison.domain.usecase.ConflictInfo
+import takagi.ru.saison.domain.usecase.ImportCourseDataUseCase
+import takagi.ru.saison.domain.usecase.ImportOptions
 import javax.inject.Inject
 
 /**
- * 导入预览状态
- */
-sealed class ImportPreviewState {
-    object Idle : ImportPreviewState()
-    object Loading : ImportPreviewState()
-    data class Preview(
-        val courses: List<Course>,
-        val selectedIndices: Set<Int>,
-        val duplicateWarnings: List<String>,
-        val generatedPeriods: List<CoursePeriod>? = null,
-        val matchingWarnings: List<String> = emptyList(),
-        val strategy: TimeMatchingStrategy = TimeMatchingStrategy.UseExistingPeriods,
-        val suggestedSemesterStartDate: java.time.LocalDate? = null
-    ) : ImportPreviewState()
-    data class Success(val importedCount: Int) : ImportPreviewState()
-    data class Error(val message: String) : ImportPreviewState()
-}
-
-/**
- * 导入预览ViewModel
+ * 导入预览界面的ViewModel
+ * 管理导入数据的加载、验证和导入执行
  */
 @HiltViewModel
 class ImportPreviewViewModel @Inject constructor(
-    private val icsImportUseCase: IcsImportUseCase,
-    private val courseRepository: CourseRepository
+    private val importUseCase: ImportCourseDataUseCase,
+    savedStateHandle: SavedStateHandle
 ) : ViewModel() {
     
-    private val _uiState = MutableStateFlow<ImportPreviewState>(ImportPreviewState.Idle)
-    val uiState: StateFlow<ImportPreviewState> = _uiState.asStateFlow()
+    private val importUri: String? = savedStateHandle["uri"]
     
-    private var currentCourses: List<Course> = emptyList()
-    private var currentSemesterId: Long? = null
+    private val _uiState = MutableStateFlow<ImportPreviewUiState>(ImportPreviewUiState.Loading)
+    val uiState: StateFlow<ImportPreviewUiState> = _uiState.asStateFlow()
     
-    /**
-     * 加载预览数据（增强版，支持时间匹配策略）
-     */
-    fun loadPreview(
-        uri: Uri,
-        semesterId: Long,
-        primaryColor: Color,
-        strategy: TimeMatchingStrategy = TimeMatchingStrategy.UseExistingPeriods,
-        existingPeriods: List<CoursePeriod> = emptyList()
-    ) {
-        currentSemesterId = semesterId
-        viewModelScope.launch {
-            _uiState.value = ImportPreviewState.Loading
-            
-            try {
-                val result = icsImportUseCase.previewImport(
-                    uri = uri,
-                    targetSemesterId = semesterId,
-                    primaryColor = primaryColor,
-                    strategy = strategy,
-                    existingPeriods = existingPeriods
-                )
-                
-                result.onSuccess { previewResult ->
-                    currentCourses = previewResult.courses
-                    
-                    // 检测重复课程
-                    val existingCourses = courseRepository.getCoursesBySemester(semesterId).first()
-                    val duplicateWarnings = icsImportUseCase.detectDuplicates(previewResult.courses, existingCourses)
-                    
-                    // 默认全选
-                    val selectedIndices = previewResult.courses.indices.toSet()
-                    
-                    _uiState.value = ImportPreviewState.Preview(
-                        courses = previewResult.courses,
-                        selectedIndices = selectedIndices,
-                        duplicateWarnings = duplicateWarnings,
-                        generatedPeriods = previewResult.generatedPeriods,
-                        matchingWarnings = previewResult.matchingWarnings,
-                        strategy = strategy,
-                        suggestedSemesterStartDate = previewResult.suggestedSemesterStartDate
-                    )
-                }.onFailure { error ->
-                    val message = when (error) {
-                        is IcsException.EmptyFile -> "文件不包含课程数据"
-                        is IcsException.InvalidFormat -> "ICS文件格式无效"
-                        is IcsException.IoError -> error.message ?: "读取文件失败"
-                        is IcsException.ParseError -> "解析失败: ${error.message}"
-                        else -> error.message ?: "未知错误"
-                    }
-                    _uiState.value = ImportPreviewState.Error(message)
-                }
-            } catch (e: Exception) {
-                _uiState.value = ImportPreviewState.Error(e.message ?: "加载失败")
-            }
-        }
+    private val _importSuccessEvent = Channel<Long>(Channel.BUFFERED)
+    val importSuccessEvent = _importSuccessEvent.receiveAsFlow()
+    
+    private var currentData: SemesterExportData? = null
+    
+    init {
+        loadImportData()
     }
     
-    /**
-     * 切换课程选择状态
-     */
-    fun toggleCourseSelection(courseIndex: Int) {
-        val currentState = _uiState.value
-        if (currentState is ImportPreviewState.Preview) {
-            val newSelectedIndices = if (courseIndex in currentState.selectedIndices) {
-                currentState.selectedIndices - courseIndex
+    private fun loadImportData() {
+        viewModelScope.launch {
+            _uiState.value = ImportPreviewUiState.Loading
+            
+            val uri = importUri?.let { Uri.parse(it) }
+            if (uri == null) {
+                _uiState.value = ImportPreviewUiState.Error("无效的文件路径")
+                return@launch
+            }
+            
+            // 解析文件
+            val parseResult = importUseCase.parseFromUri(uri)
+            if (parseResult.isFailure) {
+                _uiState.value = ImportPreviewUiState.Error(
+                    parseResult.exceptionOrNull()?.message ?: "解析失败"
+                )
+                return@launch
+            }
+            
+            val exportData = parseResult.getOrThrow()
+            
+            // 目前只支持导入第一个学期
+            val semesterData = exportData.semesters.firstOrNull()
+            if (semesterData == null) {
+                _uiState.value = ImportPreviewUiState.Error("文件中没有学期数据")
+                return@launch
+            }
+            
+            currentData = semesterData
+            
+            // 检测冲突
+            val conflicts = importUseCase.detectConflicts(semesterData)
+            
+            // 生成默认学期名称（如果有冲突则添加后缀）
+            val defaultName = if (conflicts.hasNameConflict) {
+                "${semesterData.semesterInfo.name} (导入)"
             } else {
-                currentState.selectedIndices + courseIndex
+                semesterData.semesterInfo.name
             }
             
-            _uiState.value = currentState.copy(selectedIndices = newSelectedIndices)
+            _uiState.value = ImportPreviewUiState.Success(
+                data = semesterData,
+                conflicts = conflicts,
+                semesterName = defaultName,
+                applyPeriodSettings = conflicts.hasPeriodSettingsConflict,
+                applyDisplaySettings = conflicts.hasDisplaySettingsConflict,
+                isImporting = false
+            )
         }
     }
     
-    /**
-     * 全选
-     */
-    fun selectAll() {
+    fun updateSemesterName(name: String) {
         val currentState = _uiState.value
-        if (currentState is ImportPreviewState.Preview) {
-            val allIndices = currentState.courses.indices.toSet()
-            _uiState.value = currentState.copy(selectedIndices = allIndices)
+        if (currentState is ImportPreviewUiState.Success) {
+            _uiState.value = currentState.copy(semesterName = name)
         }
     }
     
-    /**
-     * 取消全选
-     */
-    fun deselectAll() {
+    fun updateApplyPeriodSettings(apply: Boolean) {
         val currentState = _uiState.value
-        if (currentState is ImportPreviewState.Preview) {
-            _uiState.value = currentState.copy(selectedIndices = emptySet())
+        if (currentState is ImportPreviewUiState.Success) {
+            _uiState.value = currentState.copy(applyPeriodSettings = apply)
         }
     }
     
-    /**
-     * 确认导入
-     */
-    fun confirmImport() {
+    fun updateApplyDisplaySettings(apply: Boolean) {
+        val currentState = _uiState.value
+        if (currentState is ImportPreviewUiState.Success) {
+            _uiState.value = currentState.copy(applyDisplaySettings = apply)
+        }
+    }
+    
+    fun executeImport() {
+        val currentState = _uiState.value
+        if (currentState !is ImportPreviewUiState.Success || currentState.isImporting) {
+            return
+        }
+        
+        val data = currentData ?: return
+        
         viewModelScope.launch {
-            val currentState = _uiState.value
-            if (currentState is ImportPreviewState.Preview) {
-                _uiState.value = ImportPreviewState.Loading
-                
-                // 获取选中的课程
-                val selectedCourses = currentState.selectedIndices.map { index ->
-                    currentCourses[index]
-                }
-                
-                if (selectedCourses.isEmpty()) {
-                    _uiState.value = ImportPreviewState.Error("请至少选择一门课程")
-                    return@launch
-                }
-                
-                val result = icsImportUseCase.confirmImport(
-                    courses = selectedCourses,
-                    generatedPeriods = currentState.generatedPeriods,
-                    suggestedSemesterStartDate = currentState.suggestedSemesterStartDate,
-                    targetSemesterId = currentSemesterId
+            _uiState.value = currentState.copy(isImporting = true)
+            
+            val options = ImportOptions(
+                semesterName = currentState.semesterName,
+                applyPeriodSettings = currentState.applyPeriodSettings,
+                applyDisplaySettings = currentState.applyDisplaySettings
+            )
+            
+            val result = importUseCase.executeImport(data, options)
+            
+            if (result.isSuccess) {
+                val importResult = result.getOrThrow()
+                _importSuccessEvent.send(importResult.semesterId)
+            } else {
+                _uiState.value = ImportPreviewUiState.Error(
+                    result.exceptionOrNull()?.message ?: "导入失败"
                 )
-                
-                result.onSuccess { count ->
-                    _uiState.value = ImportPreviewState.Success(count)
-                }.onFailure { error ->
-                    _uiState.value = ImportPreviewState.Error(error.message ?: "导入失败")
-                }
             }
         }
     }
     
-    /**
-     * 重置状态
-     */
-    fun resetState() {
-        _uiState.value = ImportPreviewState.Idle
-        currentCourses = emptyList()
+    fun retry() {
+        loadImportData()
     }
+}
+
+/**
+ * 导入预览界面的UI状态
+ */
+sealed class ImportPreviewUiState {
+    object Loading : ImportPreviewUiState()
+    
+    data class Error(val message: String) : ImportPreviewUiState()
+    
+    data class Success(
+        val data: SemesterExportData,
+        val conflicts: ConflictInfo,
+        val semesterName: String,
+        val applyPeriodSettings: Boolean,
+        val applyDisplaySettings: Boolean,
+        val isImporting: Boolean
+    ) : ImportPreviewUiState()
 }

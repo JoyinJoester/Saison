@@ -537,30 +537,20 @@
     <string name="semester_copy_suffix"> - 副本</string>
     <string name="error_cannot_delete_current">无法删除当前学期。请先切换到其他学期。</string>
     <string name="error_cannot_delete_last">无法删除最后一个学期。</string>
-    <!-- ICS Import/Export -->
-    <string name="import_courses">导入课程表</string>
-    <string name="export_courses">导出课程表</string>
+    <!-- Legacy ICS Import/Export strings - kept for compatibility -->
     <string name="import_preview_title">导入预览</string>
-    <string name="import_success">成功导入 %d 门课程</string>
-    <string name="import_error">导入失败: %s</string>
-    <string name="export_success">课程表已导出</string>
-    <string name="export_error">导出失败: %s</string>
     <string name="select_all">全选</string>
     <string name="deselect_all">取消全选</string>
     <string name="duplicate_warning">检测到重复课程</string>
-    <string name="invalid_ics_format">ICS文件格式无效</string>
-    <string name="empty_ics_file">文件不包含课程数据</string>
     <string name="confirm_import">确认导入</string>
     <string name="import_selected_count">已选择 %1$d / %2$d 门课程</string>
     <string name="back">返回</string>
     <string name="file_name">文件名</string>
     <string name="file_name_hint">文件将保存为 .ics 格式</string>
-    <string name="export">导出</string>
     <string name="close">关闭</string>
     <string name="share">分享</string>
     <string name="share_course_schedule">分享课程表</string>
     <string name="export_courses_description">导出当前学期的所有课程为ICS文件</string>
-    <string name="export_success_message">课程表已成功导出，您可以分享或保存该文件</string>
     
     <!-- 课程表UI优化 -->
     <string name="period_number_format">第%d节</string>
@@ -600,4 +590,104 @@
     <string name="error_evening_periods_range">晚上节次数必须在0-3之间</string>
     <string name="error_total_periods_range">总节次数（%d）必须在1-12之间</string>
     <string name="error_dinner_break_range">晚休时长必须在30-120分钟之间，且为5的倍数</string>
+    
+    <!-- 课程表导入导出 -->
+    <string name="course_management">课程表管理</string>
+    <string name="import_courses">导入课程表</string>
+    <string name="import_courses_desc">从文件导入课程表数据</string>
+    <string name="export_courses">导出课程表</string>
+    <string name="export_courses_desc">导出课程表到文件</string>
+    <string name="export_options">导出选项</string>
+    <string name="legacy_format">旧格式</string>
+    <string name="format">格式</string>
+    <string name="semester">学期</string>
+    <string name="date_range">日期范围</string>
+    <string name="course_count">课程数量</string>
+    <string name="conflicts_detected">检测到冲突</string>
+    <string name="semester_name_conflict">学期名称冲突</string>
+    <string name="semester_name_conflict_desc">已存在同名学期</string>
+    <string name="period_settings_conflict">节次设置冲突</string>
+    <string name="period_settings_conflict_desc">导入的节次设置与当前设置不同</string>
+    <string name="period_settings_changes">节次设置变更</string>
+    <string name="apply_imported_settings">应用导入的设置</string>
+    <string name="keep_current_settings">保留当前设置</string>
+    <string name="export">导出</string>
+    <string name="import_preview">导入预览</string>
+    <string name="invalid_ics_format">ICS文件格式无效</string>
+    <string name="empty_ics_file">文件不包含课程数据</string>
+    <string name="checksum_mismatch">数据校验失败</string>
+    <string name="parsing_file">正在解析文件…</string>
+    <string name="generating_file">正在生成文件…</string>
+    <string name="importing_courses">正在导入课程…</string>
+    <string name="exporting_courses">正在导出课程…</string>
+    
+    <!-- Data Management -->
+    <string name="settings_section_data_management">数据管理</string>
+    <string name="settings_import_semester_title">导入学期</string>
+    <string name="settings_import_semester_subtitle">从ICS文件导入课程表</string>
+    <string name="settings_export_semester_title">导出学期</string>
+    <string name="settings_export_semester_subtitle">导出课程表到ICS文件</string>
+    
+    <!-- Export Options -->
+    <string name="export_options_title">导出选项</string>
+    <string name="export_scope">导出范围</string>
+    <string name="export_current_semester">当前学期</string>
+    <string name="export_all_semesters">所有学期</string>
+    <string name="export_format">导出格式</string>
+    <string name="include_full_config">包含完整配置</string>
+    <string name="include_full_config_desc">导出节次设置、学期信息等配置数据</string>
+    <string name="compatibility_mode_warning">兼容模式仅导出课程数据，不包含应用特定配置</string>
+    <string name="export_button">导出</string>
+    <string name="export_success">导出成功</string>
+    <string name="export_error">导出失败：%s</string>
+    <string name="export_in_progress">正在导出...</string>
+    
+    <!-- Import Preview -->
+    <string name="import_package_info">导入包信息</string>
+    <string name="import_format">格式</string>
+    <string name="import_legacy_format">旧格式</string>
+    <string name="import_semester">学期</string>
+    <string name="import_date_range">日期范围</string>
+    <string name="import_course_count">课程数量</string>
+    <string name="import_conflicts_detected">检测到冲突</string>
+    <string name="import_semester_name_conflict">学期名称冲突</string>
+    <string name="import_semester_name_conflict_desc">已存在同名学期</string>
+    <string name="import_period_settings_conflict">节次设置冲突</string>
+    <string name="import_period_settings_conflict_desc">导入的节次设置与当前设置不同</string>
+    <string name="import_period_settings_changes">节次设置变更</string>
+    <string name="import_apply_imported_settings">应用导入的设置</string>
+    <string name="import_keep_current_settings">保留当前设置</string>
+    <string name="import_create_new_semester">创建新学期</string>
+    <string name="import_use_existing_semester">使用现有学期</string>
+    <string name="import_rename_new_semester">重命名新学期</string>
+    <string name="import_mode_add_only">仅添加新课程</string>
+    <string name="import_mode_replace_all">替换所有课程</string>
+    <string name="import_success">导入成功：已导入%1$d门课程，跳过%2$d门</string>
+    <string name="import_error">导入失败：%s</string>
+    <string name="import_in_progress">正在导入...</string>
+
+    <!-- 新的JSON导入导出系统 -->
+    <string name="export_mode">导出模式</string>
+    <string name="export_custom_selection">自定义选择</string>
+    <string name="select_semesters">选择学期</string>
+    <string name="semester_info">学期信息</string>
+    <string name="current_week">当前周数</string>
+    <string name="period_settings">节次设置</string>
+    <string name="total_periods">总节次数</string>
+    <string name="period_duration">课程时长</string>
+    <string name="break_duration">课间休息</string>
+    <string name="first_period_start">第一节开始时间</string>
+    <string name="minutes">分钟</string>
+    <string name="apply_period_settings">应用节次设置</string>
+    <string name="period_settings_will_be_overwritten">当前节次设置将被覆盖</string>
+    <string name="display_settings">显示设置</string>
+    <string name="show_weekend">显示周末</string>
+    <string name="yes">是</string>
+    <string name="no">否</string>
+    <string name="apply_display_settings">应用显示设置</string>
+    <string name="courses">课程</string>
+    <string name="courses_count">门课程</string>
+    <string name="and_more_courses">还有 %d 门课程</string>
+    <string name="retry">重试</string>
+
 </resources>

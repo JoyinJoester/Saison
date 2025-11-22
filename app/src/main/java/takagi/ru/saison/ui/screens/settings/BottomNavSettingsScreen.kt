@@ -198,7 +198,6 @@ private fun BottomNavTab.toIcon(): ImageVector = when (this) {
     BottomNavTab.CALENDAR -> Icons.Default.CalendarToday
     BottomNavTab.TASKS -> Icons.Default.CheckCircle
     BottomNavTab.POMODORO -> Icons.Default.Timer
-    BottomNavTab.METRONOME -> Icons.Default.MusicNote
     BottomNavTab.SUBSCRIPTION -> Icons.Default.Star
     BottomNavTab.SETTINGS -> Icons.Default.Settings
 }
@@ -209,7 +208,6 @@ private fun BottomNavTab.toLabel(): String = when (this) {
     BottomNavTab.CALENDAR -> "日历"
     BottomNavTab.TASKS -> "任务"
     BottomNavTab.POMODORO -> "专注"
-    BottomNavTab.METRONOME -> "节拍"
     BottomNavTab.SUBSCRIPTION -> "订阅"
     BottomNavTab.SETTINGS -> "设置"
 }

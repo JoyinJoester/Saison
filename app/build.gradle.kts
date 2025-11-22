@@ -1,7 +1,6 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.kotlin.kapt)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.ksp)
@@ -96,10 +95,10 @@ dependencies {
 
     // Hilt
     implementation(libs.hilt.android)
-    kapt(libs.hilt.compiler)
+    ksp(libs.hilt.compiler)
     implementation(libs.hilt.navigation.compose)
     implementation(libs.hilt.work)
-    kapt(libs.hilt.compiler)
+    ksp(libs.hilt.compiler)
 
     // Room
     implementation(libs.room.runtime)
@@ -156,7 +155,4 @@ dependencies {
     debugImplementation(libs.androidx.ui.test.manifest)
 }
 
-// Allow references to generated code
-kapt {
-    correctErrorTypes = true
-}
+

@@ -8,7 +8,6 @@ enum class BottomNavTab {
     CALENDAR,
     TASKS,
     POMODORO,
-    METRONOME,
     SUBSCRIPTION,
     SETTINGS;
     
@@ -18,7 +17,6 @@ enum class BottomNavTab {
             TASKS,
             COURSE,
             POMODORO,
-            METRONOME,
             SUBSCRIPTION,
             SETTINGS
         )
@@ -69,7 +67,6 @@ data class BottomNavVisibility(
     val course: Boolean = true,
     val tasks: Boolean = true,
     val pomodoro: Boolean = true,
-    val metronome: Boolean = false,  // 默认隐藏
     val subscription: Boolean = true,
     val settings: Boolean = true  // 设置项始终可见
 ) {
@@ -81,7 +78,6 @@ data class BottomNavVisibility(
         BottomNavTab.CALENDAR -> true  // Calendar is always visible
         BottomNavTab.TASKS -> tasks
         BottomNavTab.POMODORO -> pomodoro
-        BottomNavTab.METRONOME -> metronome
         BottomNavTab.SUBSCRIPTION -> subscription
         BottomNavTab.SETTINGS -> settings
     }
@@ -90,7 +86,7 @@ data class BottomNavVisibility(
      * 计算可见项数量
      */
     fun visibleCount(): Int = listOf(
-        course, tasks, pomodoro, metronome, subscription, settings
+        course, tasks, pomodoro, subscription, settings
     ).count { it }
     
     /**
@@ -102,7 +98,6 @@ data class BottomNavVisibility(
             BottomNavTab.CALENDAR -> this  // Calendar visibility cannot be changed
             BottomNavTab.TASKS -> copy(tasks = visible)
             BottomNavTab.POMODORO -> copy(pomodoro = visible)
-            BottomNavTab.METRONOME -> copy(metronome = visible)
             BottomNavTab.SUBSCRIPTION -> copy(subscription = visible)
             BottomNavTab.SETTINGS -> copy(settings = visible)
         }

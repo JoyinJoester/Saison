@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.SharingStarted
 import takagi.ru.saison.data.local.datastore.PreferencesManager
 import takagi.ru.saison.data.repository.SyncRepository
 import takagi.ru.saison.ui.theme.ThemeManager
@@ -46,7 +47,9 @@ data class NotificationSettings(
 class SettingsViewModel @Inject constructor(
     private val preferencesManager: PreferencesManager,
     private val themeManager: ThemeManager,
-    private val syncRepository: SyncRepository
+    private val syncRepository: SyncRepository,
+    private val exportCourseDataUseCase: takagi.ru.saison.domain.usecase.ExportCourseDataUseCase,
+    private val semesterRepository: takagi.ru.saison.data.repository.SemesterRepository
 ) : ViewModel() {
     
     // UI State
@@ -117,13 +120,6 @@ class SettingsViewModel @Inject constructor(
     
     val pomodoroLongBreakDuration = preferencesManager.pomodoroLongBreakDuration
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 15)
-    
-    // Metronome Settings
-    val metronomeDefaultBpm = preferencesManager.metronomeDefaultBpm
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 120)
-    
-    val metronomeSound = preferencesManager.metronomeSound
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "WOODBLOCK")
     
     // Theme Settings Functions
     fun setTheme(theme: takagi.ru.saison.data.local.datastore.SeasonalTheme) {
@@ -301,29 +297,6 @@ class SettingsViewModel @Inject constructor(
         }
     }
     
-    // Metronome Settings Functions
-    fun setMetronomeDefaultBpm(bpm: Int) {
-        viewModelScope.launch {
-            try {
-                preferencesManager.setMetronomeDefaultBpm(bpm)
-                _uiEvent.emit(SettingsUiEvent.ShowSnackbar("默认 BPM 已更新为 $bpm"))
-            } catch (e: Exception) {
-                handleError(e)
-            }
-        }
-    }
-    
-    fun setMetronomeSound(sound: String) {
-        viewModelScope.launch {
-            try {
-                preferencesManager.setMetronomeSound(sound)
-                _uiEvent.emit(SettingsUiEvent.ShowSnackbar("节拍器声音已更新"))
-            } catch (e: Exception) {
-                handleError(e)
-            }
-        }
-    }
-    
     // WebDAV Connection Test
     fun testWebDavConnection(url: String, username: String, password: String) {
         viewModelScope.launch {
@@ -448,4 +421,126 @@ class SettingsViewModel @Inject constructor(
             }
         }
     }
+    
+    // Import/Export State
+    private val _showExportDialog = MutableStateFlow(false)
+    val showExportDialog: StateFlow<Boolean> = _showExportDialog.asStateFlow()
+    
+    private val _exportInProgress = MutableStateFlow(false)
+    val exportInProgress: StateFlow<Boolean> = _exportInProgress.asStateFlow()
+    
+    private val _importInProgress = MutableStateFlow(false)
+    val importInProgress: StateFlow<Boolean> = _importInProgress.asStateFlow()
+    
+    // 保存导出选项
+    private val _exportOptions = MutableStateFlow<ExportOptionsData?>(null)
+    val exportOptions: StateFlow<ExportOptionsData?> = _exportOptions.asStateFlow()
+    
+    // Expose semester and preferences data for export dialog
+    val allSemesters = semesterRepository.getAllSemesters()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    
+    val currentSemesterId = flow {
+        emit(preferencesManager.getCurrentSemesterId())
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+    
+    // Import/Export Functions
+    fun onImportCoursesClick() {
+        // 触发文件选择器，由UI层处理
+        viewModelScope.launch {
+            _uiEvent.emit(SettingsUiEvent.ShowSnackbar("请选择要导入的JSON文件"))
+        }
+    }
+    
+    fun onExportCoursesClick() {
+        _showExportDialog.value = true
+    }
+    
+    fun dismissExportDialog() {
+        _showExportDialog.value = false
+    }
+    
+    /**
+     * 准备导出 - 显示导出对话框
+     */
+    fun prepareExport() {
+        _showExportDialog.value = true
+    }
+    
+    /**
+     * 保存导出选项
+     */
+    fun saveExportOptions(semesterIds: List<Long>) {
+        _exportOptions.value = ExportOptionsData(semesterIds)
+    }
+    
+    /**
+     * 执行导出操作到用户选择的Uri
+     */
+    suspend fun executeExportToUri(
+        uri: android.net.Uri,
+        semesterIds: List<Long>
+    ): Result<Unit> {
+        return try {
+            _exportInProgress.value = true
+            val result = exportCourseDataUseCase.exportToUri(uri, semesterIds)
+            _exportInProgress.value = false
+            
+            if (result.isSuccess) {
+                _uiEvent.emit(SettingsUiEvent.ShowSnackbar("导出成功"))
+            } else {
+                _uiEvent.emit(SettingsUiEvent.ShowSnackbar(
+                    result.exceptionOrNull()?.message ?: "导出失败",
+                    isError = true
+                ))
+            }
+            
+            result
+        } catch (e: Exception) {
+            _exportInProgress.value = false
+            _uiEvent.emit(SettingsUiEvent.ShowSnackbar(e.message ?: "导出失败", isError = true))
+            Result.failure(e)
+        }
+    }
+    
+    /**
+     * 获取建议的文件名
+     */
+    suspend fun getSuggestedFileName(semesterId: Long): String {
+        return try {
+            val semester = semesterRepository.getSemesterByIdSync(semesterId)
+            if (semester != null) {
+                exportCourseDataUseCase.generateSuggestedFileName(semester.name)
+            } else {
+                "课程表_${System.currentTimeMillis()}.json"
+            }
+        } catch (e: Exception) {
+            "课程表_${System.currentTimeMillis()}.json"
+        }
+    }
+    
+    /**
+     * 启动导入流程
+     */
+    fun startImport(uri: android.net.Uri) {
+        // 导航到导入预览界面由UI层处理
+        viewModelScope.launch {
+            _importInProgress.value = true
+        }
+    }
+    
+    /**
+     * 导入完成
+     */
+    fun onImportComplete() {
+        _importInProgress.value = false
+    }
 }
+
+
+/**
+ * 导出选项数据
+ */
+data class ExportOptionsData(
+    val semesterIds: List<Long>
+)

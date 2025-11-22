@@ -20,6 +20,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
@@ -37,6 +39,8 @@ fun SettingsScreen(
     viewModel: SettingsViewModel = hiltViewModel(),
     onNavigateBack: () -> Unit = {},
     onNavigateToBottomNavSettings: () -> Unit = {},
+    onNavigateToImportPreview: (android.net.Uri, Long) -> Unit = { _, _ -> },
+    onNavigateToExport: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val currentTheme by viewModel.currentTheme.collectAsState()
@@ -50,15 +54,38 @@ fun SettingsScreen(
     var showBottomNavBottomSheet by remember { mutableStateOf(false) }
     var showLanguageDialog by remember { mutableStateOf(false) }
     var showWebDavDialog by remember { mutableStateOf(false) }
-    var showPomodoroDialog by remember { mutableStateOf(false) }
-    var showMetronomeDialog by remember { mutableStateOf(false) }
     var showAboutDialog by remember { mutableStateOf(false) }
+    
+    // 获取 Context
+    val context = androidx.compose.ui.platform.LocalContext.current
     
     // Snackbar 支持
     val snackbarHostState = remember { SnackbarHostState() }
     
-    // 获取 Context
-    val context = androidx.compose.ui.platform.LocalContext.current
+    // 文件选择器 - 用于导入JSON文件
+    val coroutineScope = rememberCoroutineScope()
+    val importLauncher = rememberLauncherForActivityResult(
+        contract = androidx.activity.result.contract.ActivityResultContracts.OpenDocument()
+    ) { uri: android.net.Uri? ->
+        uri?.let {
+            // 导航到导入预览界面，传递Uri
+            onNavigateToImportPreview(it, 0L) // semesterId参数不再使用
+        }
+    }
+    
+    // 文件选择器 - 用于导出JSON文件
+    val exportLauncher = rememberLauncherForActivityResult(
+        contract = androidx.activity.result.contract.ActivityResultContracts.CreateDocument("application/json")
+    ) { uri: android.net.Uri? ->
+        uri?.let {
+            coroutineScope.launch {
+                val exportOptions = viewModel.exportOptions.value
+                if (exportOptions != null) {
+                    viewModel.executeExportToUri(it, exportOptions.semesterIds)
+                }
+            }
+        }
+    }
     
     // 获取字符串资源（在 Composable 上下文中）
     val confirmText = stringResource(R.string.common_action_confirm)
@@ -285,32 +312,6 @@ fun SettingsScreen(
                 }
             }
             
-            // 番茄钟设置
-            SettingsSection(title = stringResource(R.string.settings_section_pomodoro)) {
-                val pomodoroWorkDuration by viewModel.pomodoroWorkDuration.collectAsState()
-                val pomodoroBreakDuration by viewModel.pomodoroBreakDuration.collectAsState()
-                val pomodoroLongBreakDuration by viewModel.pomodoroLongBreakDuration.collectAsState()
-                
-                SettingsItem(
-                    icon = Icons.Default.Timer,
-                    title = stringResource(R.string.settings_pomodoro_duration_title),
-                    subtitle = stringResource(R.string.settings_pomodoro_duration_subtitle, pomodoroWorkDuration, pomodoroBreakDuration, pomodoroLongBreakDuration),
-                    onClick = { showPomodoroDialog = true }
-                )
-            }
-            
-            // 节拍器设置
-            SettingsSection(title = stringResource(R.string.settings_section_metronome)) {
-                val metronomeDefaultBpm by viewModel.metronomeDefaultBpm.collectAsState()
-                
-                SettingsItem(
-                    icon = Icons.Default.MusicNote,
-                    title = stringResource(R.string.settings_metronome_title),
-                    subtitle = stringResource(R.string.settings_metronome_subtitle, metronomeDefaultBpm),
-                    onClick = { showMetronomeDialog = true }
-                )
-            }
-            
             // 关于
             SettingsSection(title = stringResource(R.string.settings_section_about)) {
                 SettingsItem(
@@ -384,25 +385,40 @@ fun SettingsScreen(
         )
     }
     
-    // 番茄钟设置对话框
-    if (showPomodoroDialog) {
-        PomodoroSettingsDialog(
-            viewModel = viewModel,
-            onDismiss = { showPomodoroDialog = false }
-        )
-    }
-    
-    // 节拍器设置对话框
-    if (showMetronomeDialog) {
-        MetronomeSettingsDialog(
-            viewModel = viewModel,
-            onDismiss = { showMetronomeDialog = false }
-        )
-    }
-    
     // 关于对话框
     if (showAboutDialog) {
         AboutDialog(onDismiss = { showAboutDialog = false })
+    }
+    
+    // 导出选项对话框
+    val showExportDialog by viewModel.showExportDialog.collectAsState()
+    val exportInProgress by viewModel.exportInProgress.collectAsState()
+    val allSemesters by viewModel.allSemesters.collectAsState()
+    val currentSemesterId by viewModel.currentSemesterId.collectAsState()
+    
+    if (showExportDialog) {
+        takagi.ru.saison.ui.components.ExportDialog(
+            semesters = allSemesters,
+            currentSemesterId = currentSemesterId,
+            onDismiss = { viewModel.dismissExportDialog() },
+            onExport = { options ->
+                viewModel.dismissExportDialog()
+                coroutineScope.launch {
+                    // 保存导出选项
+                    viewModel.saveExportOptions(options.semesterIds)
+                    
+                    // 获取建议的文件名
+                    val fileName = if (options.semesterIds.size == 1) {
+                        viewModel.getSuggestedFileName(options.semesterIds.first())
+                    } else {
+                        "课程表_${System.currentTimeMillis()}.json"
+                    }
+                    
+                    // 启动文件选择器
+                    exportLauncher.launch(fileName)
+                }
+            }
+        )
     }
 }
 
@@ -965,218 +981,6 @@ private fun WebDavConfigDialog(
     )
 }
 
-// 9.1 PomodoroSettingsDialog 对话框
-@Composable
-private fun PomodoroSettingsDialog(
-    viewModel: SettingsViewModel,
-    onDismiss: () -> Unit
-) {
-    val workDuration by viewModel.pomodoroWorkDuration.collectAsState()
-    val breakDuration by viewModel.pomodoroBreakDuration.collectAsState()
-    val longBreakDuration by viewModel.pomodoroLongBreakDuration.collectAsState()
-    
-    var tempWorkDuration by remember { mutableStateOf(workDuration) }
-    var tempBreakDuration by remember { mutableStateOf(breakDuration) }
-    var tempLongBreakDuration by remember { mutableStateOf(longBreakDuration) }
-    
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("番茄钟设置") },
-        text = {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                // 工作时长
-                Column {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text("工作时长", style = MaterialTheme.typography.bodyLarge)
-                        Text(
-                            "$tempWorkDuration 分钟",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                    Slider(
-                        value = tempWorkDuration.toFloat(),
-                        onValueChange = { tempWorkDuration = it.toInt() },
-                        valueRange = 15f..60f,
-                        steps = 44
-                    )
-                }
-                
-                // 短休息时长
-                Column {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text("短休息", style = MaterialTheme.typography.bodyLarge)
-                        Text(
-                            "$tempBreakDuration 分钟",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                    Slider(
-                        value = tempBreakDuration.toFloat(),
-                        onValueChange = { tempBreakDuration = it.toInt() },
-                        valueRange = 3f..15f,
-                        steps = 11
-                    )
-                }
-                
-                // 长休息时长
-                Column {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text("长休息", style = MaterialTheme.typography.bodyLarge)
-                        Text(
-                            "$tempLongBreakDuration 分钟",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                    Slider(
-                        value = tempLongBreakDuration.toFloat(),
-                        onValueChange = { tempLongBreakDuration = it.toInt() },
-                        valueRange = 10f..30f,
-                        steps = 19
-                    )
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    viewModel.setPomodoroWorkDuration(tempWorkDuration)
-                    viewModel.setPomodoroBreakDuration(tempBreakDuration)
-                    viewModel.setPomodoroLongBreakDuration(tempLongBreakDuration)
-                    onDismiss()
-                }
-            ) {
-                Text("保存")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("取消")
-            }
-        }
-    )
-}
-
-// 9.2 MetronomeSettingsDialog 对话框
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun MetronomeSettingsDialog(
-    viewModel: SettingsViewModel,
-    onDismiss: () -> Unit
-) {
-    val defaultBpm by viewModel.metronomeDefaultBpm.collectAsState()
-    val sound by viewModel.metronomeSound.collectAsState()
-    
-    var tempBpm by remember { mutableStateOf(defaultBpm) }
-    var tempSound by remember { mutableStateOf(sound) }
-    var expanded by remember { mutableStateOf(false) }
-    
-    val soundOptions = listOf("WOODBLOCK", "CLICK", "BEEP", "METRONOME")
-    val soundNames = mapOf(
-        "WOODBLOCK" to "木鱼",
-        "CLICK" to "咔哒",
-        "BEEP" to "哔哔",
-        "METRONOME" to "节拍器"
-    )
-    
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("节拍器设置") },
-        text = {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                // BPM 设置
-                Column {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text("默认 BPM", style = MaterialTheme.typography.bodyLarge)
-                        Text(
-                            "$tempBpm",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                    Slider(
-                        value = tempBpm.toFloat(),
-                        onValueChange = { tempBpm = it.toInt() },
-                        valueRange = 40f..240f,
-                        steps = 199
-                    )
-                }
-                
-                // 声音选择
-                ExposedDropdownMenuBox(
-                    expanded = expanded,
-                    onExpandedChange = { expanded = !expanded }
-                ) {
-                    OutlinedTextField(
-                        value = soundNames[tempSound] ?: tempSound,
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text("节拍声音") },
-                        trailingIcon = {
-                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .menuAnchor()
-                    )
-                    ExposedDropdownMenu(
-                        expanded = expanded,
-                        onDismissRequest = { expanded = false }
-                    ) {
-                        soundOptions.forEach { option ->
-                            DropdownMenuItem(
-                                text = { Text(soundNames[option] ?: option) },
-                                onClick = {
-                                    tempSound = option
-                                    expanded = false
-                                }
-                            )
-                        }
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    viewModel.setMetronomeDefaultBpm(tempBpm)
-                    viewModel.setMetronomeSound(tempSound)
-                    onDismiss()
-                }
-            ) {
-                Text("保存")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("取消")
-            }
-        }
-    )
-}
-
 @Composable
 private fun AboutDialog(onDismiss: () -> Unit) {
     AlertDialog(
@@ -1595,7 +1399,6 @@ private fun takagi.ru.saison.data.local.datastore.BottomNavTab.toIcon(): android
     takagi.ru.saison.data.local.datastore.BottomNavTab.CALENDAR -> Icons.Default.CalendarToday
     takagi.ru.saison.data.local.datastore.BottomNavTab.TASKS -> Icons.Default.CheckCircle
     takagi.ru.saison.data.local.datastore.BottomNavTab.POMODORO -> Icons.Default.Timer
-    takagi.ru.saison.data.local.datastore.BottomNavTab.METRONOME -> Icons.Default.MusicNote
     takagi.ru.saison.data.local.datastore.BottomNavTab.SUBSCRIPTION -> Icons.Default.Star
     takagi.ru.saison.data.local.datastore.BottomNavTab.SETTINGS -> Icons.Default.Settings
 }
@@ -1606,7 +1409,6 @@ private fun takagi.ru.saison.data.local.datastore.BottomNavTab.toLabel(): String
     takagi.ru.saison.data.local.datastore.BottomNavTab.CALENDAR -> "日历"
     takagi.ru.saison.data.local.datastore.BottomNavTab.TASKS -> "任务"
     takagi.ru.saison.data.local.datastore.BottomNavTab.POMODORO -> "专注"
-    takagi.ru.saison.data.local.datastore.BottomNavTab.METRONOME -> "节拍"
     takagi.ru.saison.data.local.datastore.BottomNavTab.SUBSCRIPTION -> "订阅"
     takagi.ru.saison.data.local.datastore.BottomNavTab.SETTINGS -> "设置"
 }
@@ -1723,4 +1525,194 @@ fun ThemeModeSelectionDialog(
 @Composable
 fun getThemeModeName(mode: takagi.ru.saison.data.local.datastore.ThemeMode): String {
     return stringResource(mode.displayNameRes)
+}
+
+
+/**
+ * ExportOptionsDialog - 导出选项对话框
+ * 
+ * 允许用户选择导出范围和格式
+ */
+@Composable
+fun ExportOptionsDialog(
+    onDismiss: () -> Unit,
+    onExport: (ExportOptions) -> Unit,
+    isExporting: Boolean = false,
+    modifier: Modifier = Modifier
+) {
+    var exportMode by remember { mutableStateOf(ExportMode.CURRENT_SEMESTER) }
+    var compatibilityMode by remember { mutableStateOf(false) }
+    
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = stringResource(R.string.export_options_title),
+                style = MaterialTheme.typography.headlineSmall
+            )
+        },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // 导出范围选择
+                Text(
+                    text = stringResource(R.string.export_scope),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    RadioButtonOption(
+                        selected = exportMode == ExportMode.CURRENT_SEMESTER,
+                        onClick = { exportMode = ExportMode.CURRENT_SEMESTER },
+                        text = stringResource(R.string.export_current_semester)
+                    )
+                    
+                    RadioButtonOption(
+                        selected = exportMode == ExportMode.ALL_SEMESTERS,
+                        onClick = { exportMode = ExportMode.ALL_SEMESTERS },
+                        text = stringResource(R.string.export_all_semesters)
+                    )
+                }
+                
+                Divider()
+                
+                // 导出格式选择
+                Text(
+                    text = stringResource(R.string.export_format),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { compatibilityMode = !compatibilityMode }
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = stringResource(R.string.include_full_config),
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = stringResource(R.string.include_full_config_desc),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Switch(
+                            checked = !compatibilityMode,
+                            onCheckedChange = { compatibilityMode = !it }
+                        )
+                    }
+                }
+                
+                if (compatibilityMode) {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
+                        )
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            verticalAlignment = Alignment.Top
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Warning,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = stringResource(R.string.compatibility_mode_warning),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    onExport(
+                        ExportOptions(
+                            mode = exportMode,
+                            compatibilityMode = compatibilityMode
+                        )
+                    )
+                },
+                enabled = !isExporting
+            ) {
+                if (isExporting) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(16.dp),
+                        strokeWidth = 2.dp,
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                }
+                Text(
+                    if (isExporting) 
+                        stringResource(R.string.export_in_progress) 
+                    else 
+                        stringResource(R.string.export_button)
+                )
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = onDismiss,
+                enabled = !isExporting
+            ) {
+                Text(stringResource(R.string.action_cancel))
+            }
+        }
+    )
+}
+
+/**
+ * RadioButtonOption - 单选按钮选项
+ */
+@Composable
+private fun RadioButtonOption(
+    selected: Boolean,
+    onClick: () -> Unit,
+    text: String,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        RadioButton(
+            selected = selected,
+            onClick = onClick
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodyLarge
+        )
+    }
 }

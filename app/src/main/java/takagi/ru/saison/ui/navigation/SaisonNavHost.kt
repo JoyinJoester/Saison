@@ -4,6 +4,7 @@ import android.net.Uri
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -68,30 +69,30 @@ fun SaisonNavHost(
                 },
                 navArgument("semesterId") { 
                     type = NavType.LongType
-                    defaultValue = 1L
+                    defaultValue = 0L // 不再使用，保留用于兼容性
                 }
             )
         ) { backStackEntry ->
             val uriString = backStackEntry.arguments?.getString("uri") ?: return@composable
-            val uri = Uri.parse(Uri.decode(uriString))
-            val semesterId = backStackEntry.arguments?.getLong("semesterId") ?: 1L
-            val primaryColor = MaterialTheme.colorScheme.primary
+            // 将Uri保存到ViewModel的SavedStateHandle中
+            val viewModel: takagi.ru.saison.ui.screens.course.ImportPreviewViewModel = hiltViewModel()
             
             takagi.ru.saison.ui.screens.course.ImportPreviewScreen(
-                uri = uri,
-                semesterId = semesterId,
-                primaryColor = primaryColor,
                 onNavigateBack = {
                     if (navController.currentBackStackEntry != null) {
                         navController.popBackStack()
                     }
                 },
-                onImportSuccess = {
+                onImportSuccess = { semesterId ->
                     if (navController.currentBackStackEntry != null) {
                         navController.popBackStack()
                     }
-                    // TODO: 显示成功提示
-                }
+                    // 导航到新创建的学期
+                    navController.navigate(Screen.Course.route) {
+                        popUpTo(Screen.Settings.route) { inclusive = false }
+                    }
+                },
+                viewModel = viewModel
             )
         }
         

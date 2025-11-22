@@ -535,10 +535,6 @@
     <string name="import_courses">Nhập thời khóa biểu</string>
     <string name="export_courses">Xuất thời khóa biểu</string>
     <string name="import_preview_title">Xem trước nhập</string>
-    <string name="import_success">Đã nhập thành công %d môn học</string>
-    <string name="import_error">Nhập thất bại: %s</string>
-    <string name="export_success">Đã xuất thời khóa biểu</string>
-    <string name="export_error">Xuất thất bại: %s</string>
     <string name="select_all">Chọn tất cả</string>
     <string name="deselect_all">Bỏ chọn tất cả</string>
     <string name="duplicate_warning">Phát hiện môn học trùng lặp</string>
@@ -554,7 +550,6 @@
     <string name="share">Chia sẻ</string>
     <string name="share_course_schedule">Chia sẻ thời khóa biểu</string>
     <string name="export_courses_description">Xuất tất cả môn học từ học kỳ hiện tại dưới dạng tệp ICS</string>
-    <string name="export_success_message">Xuất thời khóa biểu thành công. Bạn có thể chia sẻ hoặc lưu tệp.</string>
     
     <!-- Tối ưu giao diện thời khóa biểu -->
     <string name="period_number_format">Tiết %d</string>
@@ -585,4 +580,49 @@
     <string name="error_evening_periods_range">Số tiết buổi tối phải từ 0-3</string>
     <string name="error_total_periods_range">Tổng số tiết (%d) phải từ 1-12</string>
     <string name="error_dinner_break_range">Thời gian nghỉ tối phải từ 30-120 phút và là bội số của 5</string>
+    
+    <!-- Data Management -->
+    <string name="settings_section_data_management">Quản lý dữ liệu</string>
+    <string name="settings_import_semester_title">Nhập học kỳ</string>
+    <string name="settings_import_semester_subtitle">Nhập thời khóa biểu từ tệp ICS</string>
+    <string name="settings_export_semester_title">Xuất học kỳ</string>
+    <string name="settings_export_semester_subtitle">Xuất thời khóa biểu ra tệp ICS</string>
+    
+    <!-- Export Options -->
+    <string name="export_options_title">Tùy chọn xuất</string>
+    <string name="export_scope">Phạm vi xuất</string>
+    <string name="export_current_semester">Học kỳ hiện tại</string>
+    <string name="export_all_semesters">Tất cả học kỳ</string>
+    <string name="export_format">Định dạng xuất</string>
+    <string name="include_full_config">Bao gồm cấu hình đầy đủ</string>
+    <string name="include_full_config_desc">Xuất cài đặt tiết học, thông tin học kỳ và dữ liệu cấu hình khác</string>
+    <string name="compatibility_mode_warning">Chế độ tương thích chỉ xuất dữ liệu khóa học, không bao gồm cấu hình ứng dụng</string>
+    <string name="export_button">Xuất</string>
+    <string name="export_success">Xuất thành công</string>
+    <string name="export_error">Xuất thất bại: %s</string>
+    <string name="export_in_progress">Đang xuất...</string>
+    
+    <!-- Import Preview -->
+    <string name="import_package_info">Thông tin gói nhập</string>
+    <string name="import_format">Định dạng</string>
+    <string name="import_legacy_format">Định dạng cũ</string>
+    <string name="import_semester">Học kỳ</string>
+    <string name="import_date_range">Phạm vi ngày</string>
+    <string name="import_course_count">Số lượng khóa học</string>
+    <string name="import_conflicts_detected">Phát hiện xung đột</string>
+    <string name="import_semester_name_conflict">Xung đột tên học kỳ</string>
+    <string name="import_semester_name_conflict_desc">Đã tồn tại học kỳ cùng tên</string>
+    <string name="import_period_settings_conflict">Xung đột cài đặt tiết học</string>
+    <string name="import_period_settings_conflict_desc">Cài đặt tiết học được nhập khác với cài đặt hiện tại</string>
+    <string name="import_period_settings_changes">Thay đổi cài đặt tiết học</string>
+    <string name="import_apply_imported_settings">Áp dụng cài đặt được nhập</string>
+    <string name="import_keep_current_settings">Giữ cài đặt hiện tại</string>
+    <string name="import_create_new_semester">Tạo học kỳ mới</string>
+    <string name="import_use_existing_semester">Sử dụng học kỳ hiện có</string>
+    <string name="import_rename_new_semester">Đổi tên học kỳ mới</string>
+    <string name="import_mode_add_only">Chỉ thêm khóa học mới</string>
+    <string name="import_mode_replace_all">Thay thế tất cả khóa học</string>
+    <string name="import_success">Nhập thành công: đã nhập %1$d khóa học, bỏ qua %2$d</string>
+    <string name="import_error">Nhập thất bại: %s</string>
+    <string name="import_in_progress">Đang nhập...</string>
 </resources>

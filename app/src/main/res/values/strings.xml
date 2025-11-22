@@ -193,6 +193,51 @@
     <string name="settings_licenses_title">Open Source Licenses</string>
     <string name="settings_licenses_subtitle">View open source licenses</string>
     
+    <!-- Data Management -->
+    <string name="settings_section_data_management">Data Management</string>
+    <string name="settings_import_semester_title">Import Semester</string>
+    <string name="settings_import_semester_subtitle">Import course schedule from ICS file</string>
+    <string name="settings_export_semester_title">Export Semester</string>
+    <string name="settings_export_semester_subtitle">Export course schedule to ICS file</string>
+    
+    <!-- Export Options -->
+    <string name="export_options_title">Export Options</string>
+    <string name="export_scope">Export Scope</string>
+    <string name="export_current_semester">Current Semester</string>
+    <string name="export_all_semesters">All Semesters</string>
+    <string name="export_format">Export Format</string>
+    <string name="include_full_config">Include Full Configuration</string>
+    <string name="include_full_config_desc">Export period settings, semester info and other configuration data</string>
+    <string name="compatibility_mode_warning">Compatibility mode only exports course data without app-specific configuration</string>
+    <string name="export_button">Export</string>
+    <string name="export_success">Export successful</string>
+    <string name="export_error">Export failed: %s</string>
+    <string name="export_in_progress">Exporting...</string>
+    
+    <!-- Import Preview -->
+    <string name="import_package_info">Import Package Info</string>
+    <string name="import_format">Format</string>
+    <string name="import_legacy_format">Legacy Format</string>
+    <string name="import_semester">Semester</string>
+    <string name="import_date_range">Date Range</string>
+    <string name="import_course_count">Course Count</string>
+    <string name="import_conflicts_detected">Conflicts Detected</string>
+    <string name="import_semester_name_conflict">Semester Name Conflict</string>
+    <string name="import_semester_name_conflict_desc">A semester with the same name already exists</string>
+    <string name="import_period_settings_conflict">Period Settings Conflict</string>
+    <string name="import_period_settings_conflict_desc">Imported period settings differ from current settings</string>
+    <string name="import_period_settings_changes">Period Settings Changes</string>
+    <string name="import_apply_imported_settings">Apply Imported Settings</string>
+    <string name="import_keep_current_settings">Keep Current Settings</string>
+    <string name="import_create_new_semester">Create New Semester</string>
+    <string name="import_use_existing_semester">Use Existing Semester</string>
+    <string name="import_rename_new_semester">Rename New Semester</string>
+    <string name="import_mode_add_only">Add New Courses Only</string>
+    <string name="import_mode_replace_all">Replace All Courses</string>
+    <string name="import_success">Import successful: %1$d courses imported, %2$d skipped</string>
+    <string name="import_error">Import failed: %s</string>
+    <string name="import_in_progress">Importing...</string>
+    
     <string name="settings_theme_dialog_title">Select Theme</string>
     <string name="settings_language_dialog_title">Select Language</string>
     <string name="settings_webdav_dialog_title">WebDAV Configuration</string>
@@ -537,25 +582,16 @@
     <string name="semester_copy_suffix"> - Copy</string>
     <string name="error_cannot_delete_current">Cannot delete current semester. Please switch to another semester first.</string>
     <string name="error_cannot_delete_last">Cannot delete the last semester.</string>
-    <!-- ICS Import/Export -->
-    <string name="import_courses">Import Schedule</string>
-    <string name="export_courses">Export Schedule</string>
+    <!-- Legacy ICS Import/Export strings - kept for compatibility -->
     <string name="import_preview_title">Import Preview</string>
-    <string name="import_success">Successfully imported %d courses</string>
-    <string name="import_error">Import failed: %s</string>
-    <string name="export_success">Schedule exported</string>
-    <string name="export_error">Export failed: %s</string>
     <string name="select_all">Select All</string>
     <string name="deselect_all">Deselect All</string>
     <string name="duplicate_warning">Duplicate courses detected</string>
-    <string name="invalid_ics_format">Invalid ICS file format</string>
-    <string name="empty_ics_file">File contains no course data</string>
     <string name="confirm_import">Confirm Import</string>
     <string name="import_selected_count">Selected %1$d / %2$d courses</string>
     <string name="back">Back</string>
     <string name="file_name">File Name</string>
     <string name="file_name_hint">File will be saved as .ics format</string>
-    <string name="export">Export</string>
     <string name="close">Close</string>
     <string name="share">Share</string>
     <string name="share_course_schedule">Share Course Schedule</string>
@@ -600,5 +636,59 @@
     <string name="error_evening_periods_range">Evening periods must be between 0-3</string>
     <string name="error_total_periods_range">Total periods (%d) must be between 1-12</string>
     <string name="error_dinner_break_range">Dinner break must be between 30-120 minutes and a multiple of 5</string>
+    
+    <!-- Course Import/Export -->
+    <string name="course_management">Course Management</string>
+    <string name="import_courses">Import Courses</string>
+    <string name="import_courses_desc">Import course schedule from file</string>
+    <string name="export_courses">Export Courses</string>
+    <string name="export_courses_desc">Export course schedule to file</string>
+    <string name="export_options">Export Options</string>
+    <string name="legacy_format">Legacy Format</string>
+    <string name="format">Format</string>
+    <string name="semester">Semester</string>
+    <string name="date_range">Date Range</string>
+    <string name="course_count">Course Count</string>
+    <string name="conflicts_detected">Conflicts Detected</string>
+    <string name="semester_name_conflict">Semester Name Conflict</string>
+    <string name="semester_name_conflict_desc">A semester with the same name already exists</string>
+    <string name="period_settings_conflict">Period Settings Conflict</string>
+    <string name="period_settings_conflict_desc">Imported period settings differ from current settings</string>
+    <string name="period_settings_changes">Period Settings Changes</string>
+    <string name="apply_imported_settings">Apply Imported Settings</string>
+    <string name="keep_current_settings">Keep Current Settings</string>
+    <string name="export">Export</string>
+    <string name="import_preview">Import Preview</string>
+    <string name="invalid_ics_format">Invalid ICS file format</string>
+    <string name="empty_ics_file">File contains no course data</string>
+    <string name="checksum_mismatch">Data verification failed</string>
+    <string name="parsing_file">Parsing file…</string>
+    <string name="generating_file">Generating file…</string>
+    <string name="importing_courses">Importing courses…</string>
+    <string name="exporting_courses">Exporting courses…</string>
+
+    <!-- New JSON Import/Export System -->
+    <string name="export_mode">Export Mode</string>
+    <string name="export_custom_selection">Custom Selection</string>
+    <string name="select_semesters">Select Semesters</string>
+    <string name="semester_info">Semester Information</string>
+    <string name="current_week">Current Week</string>
+    <string name="period_settings">Period Settings</string>
+    <string name="total_periods">Total Periods</string>
+    <string name="period_duration">Period Duration</string>
+    <string name="break_duration">Break Duration</string>
+    <string name="first_period_start">First Period Start Time</string>
+    <string name="minutes">minutes</string>
+    <string name="apply_period_settings">Apply Period Settings</string>
+    <string name="period_settings_will_be_overwritten">Current period settings will be overwritten</string>
+    <string name="display_settings">Display Settings</string>
+    <string name="show_weekend">Show Weekend</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    <string name="apply_display_settings">Apply Display Settings</string>
+    <string name="courses">Courses</string>
+    <string name="courses_count">courses</string>
+    <string name="and_more_courses">And %d more courses</string>
+    <string name="retry">Retry</string>
 
 </resources>

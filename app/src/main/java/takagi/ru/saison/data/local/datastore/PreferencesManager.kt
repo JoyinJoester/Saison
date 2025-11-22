@@ -48,8 +48,6 @@ class PreferencesManager @Inject constructor(
         val POMODORO_LONG_BREAK_DURATION = intPreferencesKey("pomodoro_long_break_duration")
         val POMODORO_SOUND_ENABLED = booleanPreferencesKey("pomodoro_sound_enabled")
         val POMODORO_VIBRATION_ENABLED = booleanPreferencesKey("pomodoro_vibration_enabled")
-        val METRONOME_DEFAULT_BPM = intPreferencesKey("metronome_default_bpm")
-        val METRONOME_SOUND = stringPreferencesKey("metronome_sound")
         
         // Bottom Navigation Settings
         val BOTTOM_NAV_CALENDAR = booleanPreferencesKey("bottom_nav_calendar")
@@ -58,7 +56,6 @@ class PreferencesManager @Inject constructor(
         val BOTTOM_NAV_EVENTS = booleanPreferencesKey("bottom_nav_events")
         val BOTTOM_NAV_ROUTINE = booleanPreferencesKey("bottom_nav_routine")
         val BOTTOM_NAV_POMODORO = booleanPreferencesKey("bottom_nav_pomodoro")
-        val BOTTOM_NAV_METRONOME = booleanPreferencesKey("bottom_nav_metronome")
         val BOTTOM_NAV_SETTINGS = booleanPreferencesKey("bottom_nav_settings")
         val BOTTOM_NAV_ORDER = stringPreferencesKey("bottom_nav_order")
         
@@ -382,29 +379,6 @@ class PreferencesManager @Inject constructor(
         }
     }
     
-    // Metronome Settings
-    val metronomeDefaultBpm: Flow<Int> = dataStore.data
-        .map { preferences ->
-            preferences[PreferencesKeys.METRONOME_DEFAULT_BPM] ?: 120
-        }
-    
-    val metronomeSound: Flow<String> = dataStore.data
-        .map { preferences ->
-            preferences[PreferencesKeys.METRONOME_SOUND] ?: "WOODBLOCK"
-        }
-    
-    suspend fun setMetronomeDefaultBpm(bpm: Int) {
-        dataStore.edit { preferences ->
-            preferences[PreferencesKeys.METRONOME_DEFAULT_BPM] = bpm
-        }
-    }
-    
-    suspend fun setMetronomeSound(sound: String) {
-        dataStore.edit { preferences ->
-            preferences[PreferencesKeys.METRONOME_SOUND] = sound
-        }
-    }
-    
     // Bottom Navigation Settings
     val bottomNavVisibility: Flow<BottomNavVisibility> = dataStore.data
         .catch { exception ->
@@ -419,7 +393,6 @@ class PreferencesManager @Inject constructor(
                 course = preferences[PreferencesKeys.BOTTOM_NAV_COURSE] ?: true,
                 tasks = preferences[PreferencesKeys.BOTTOM_NAV_TASKS] ?: true,
                 pomodoro = preferences[PreferencesKeys.BOTTOM_NAV_POMODORO] ?: true,
-                metronome = preferences[PreferencesKeys.BOTTOM_NAV_METRONOME] ?: false,  // 默认隐藏
                 settings = preferences[PreferencesKeys.BOTTOM_NAV_SETTINGS] ?: true
             )
         }
@@ -439,7 +412,6 @@ class PreferencesManager @Inject constructor(
                 }
                 BottomNavTab.TASKS -> preferences[PreferencesKeys.BOTTOM_NAV_TASKS] = visible
                 BottomNavTab.POMODORO -> preferences[PreferencesKeys.BOTTOM_NAV_POMODORO] = visible
-                BottomNavTab.METRONOME -> preferences[PreferencesKeys.BOTTOM_NAV_METRONOME] = visible
                 BottomNavTab.SUBSCRIPTION -> {
                     // SUBSCRIPTION tab visibility is not stored in preferences
                     // It's always visible or controlled elsewhere

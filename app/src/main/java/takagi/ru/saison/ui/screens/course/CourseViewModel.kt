@@ -19,7 +19,7 @@ class CourseViewModel @Inject constructor(
     private val weekCalculator: takagi.ru.saison.util.WeekCalculator,
     private val semesterRepository: takagi.ru.saison.data.repository.SemesterRepository,
     private val preferencesManager: takagi.ru.saison.data.local.datastore.PreferencesManager,
-    private val icsExportUseCase: takagi.ru.saison.domain.usecase.IcsExportUseCase
+    private val exportCourseDataUseCase: takagi.ru.saison.domain.usecase.ExportCourseDataUseCase
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow<CourseUiState>(CourseUiState.Loading)
@@ -418,43 +418,77 @@ class CourseViewModel @Inject constructor(
     private val _exportState = MutableStateFlow<ExportState>(ExportState.Idle)
     val exportState: StateFlow<ExportState> = _exportState.asStateFlow()
     
+    // 导出对话框显示状态
+    private val _showExportDialog = MutableStateFlow(false)
+    val showExportDialog: StateFlow<Boolean> = _showExportDialog.asStateFlow()
+    
+    // 导出选项
+    private val _exportOptions = MutableStateFlow<ExportOptionsData?>(null)
+    val exportOptions: StateFlow<ExportOptionsData?> = _exportOptions.asStateFlow()
+    
+    // 所有学期列表（用于导出对话框）
+    val allSemesters = semesterRepository.getAllSemesters()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    
     /**
-     * 导出当前学期的课程表
+     * 显示导出对话框
      */
-    fun exportCurrentSemester(fileName: String? = null) {
-        viewModelScope.launch {
-            _exportState.value = ExportState.Loading
-            
-            val semesterId = currentSemesterId.first()
-            if (semesterId == null) {
-                _exportState.value = ExportState.Error("未找到当前学期")
-                return@launch
+    fun showExportDialog() {
+        _showExportDialog.value = true
+    }
+    
+    /**
+     * 隐藏导出对话框
+     */
+    fun dismissExportDialog() {
+        _showExportDialog.value = false
+    }
+    
+    /**
+     * 保存导出选项
+     */
+    fun saveExportOptions(semesterIds: List<Long>) {
+        _exportOptions.value = ExportOptionsData(semesterIds)
+    }
+    
+    /**
+     * 获取建议的文件名
+     */
+    suspend fun getSuggestedFileName(semesterId: Long): String {
+        return try {
+            val semester = semesterRepository.getSemesterByIdSync(semesterId)
+            if (semester != null) {
+                exportCourseDataUseCase.generateSuggestedFileName(semester.name)
+            } else {
+                "课程表_${System.currentTimeMillis()}.json"
             }
-            
-            val result = icsExportUseCase.exportSemester(semesterId, fileName)
-            
-            result.onSuccess { uri ->
-                _exportState.value = ExportState.Success(uri)
-            }.onFailure { error ->
-                _exportState.value = ExportState.Error(error.message ?: "导出失败")
-            }
+        } catch (e: Exception) {
+            "课程表_${System.currentTimeMillis()}.json"
         }
     }
     
     /**
-     * 导出选中的课程
+     * 导出课程表到用户选择的Uri
+     * @param uri 用户通过SAF选择的保存位置
+     * @param semesterIds 要导出的学期ID列表
      */
-    fun exportCourses(courses: List<Course>, fileName: String) {
-        viewModelScope.launch {
+    suspend fun exportToUri(uri: android.net.Uri, semesterIds: List<Long>): Result<Unit> {
+        return try {
             _exportState.value = ExportState.Loading
             
-            val result = icsExportUseCase.exportCourses(courses, fileName)
+            // 使用新的JSON导出系统
+            val result = exportCourseDataUseCase.exportToUri(uri, semesterIds)
             
-            result.onSuccess { uri ->
+            if (result.isSuccess) {
                 _exportState.value = ExportState.Success(uri)
-            }.onFailure { error ->
-                _exportState.value = ExportState.Error(error.message ?: "导出失败")
+            } else {
+                _exportState.value = ExportState.Error(result.exceptionOrNull()?.message ?: "导出失败")
             }
+            
+            result
+        } catch (e: Exception) {
+            _exportState.value = ExportState.Error(e.message ?: "导出失败")
+            Result.failure(e)
         }
     }
     
@@ -463,6 +497,7 @@ class CourseViewModel @Inject constructor(
      */
     fun resetExportState() {
         _exportState.value = ExportState.Idle
+        _exportOptions.value = null
     }
     
     // ========== 网格视图增强功能 ==========
@@ -545,3 +580,10 @@ sealed class ExportState {
     data class Success(val uri: android.net.Uri) : ExportState()
     data class Error(val message: String) : ExportState()
 }
+
+/**
+ * 导出选项数据
+ */
+data class ExportOptionsData(
+    val semesterIds: List<Long>
+)

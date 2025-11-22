@@ -1,122 +1,50 @@
 package takagi.ru.saison.ui.screens.course
 
-import android.net.Uri
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import takagi.ru.saison.R
-import takagi.ru.saison.domain.model.Course
-import java.time.format.DateTimeFormatter
+import takagi.ru.saison.domain.model.courseexport.CourseData
+import takagi.ru.saison.domain.model.courseexport.SemesterExportData
+import takagi.ru.saison.domain.usecase.ConflictInfo
 
 /**
  * 导入预览界面
+ * 显示将要导入的课程表数据，并允许用户配置导入选项
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ImportPreviewScreen(
-    uri: Uri,
-    semesterId: Long,
-    primaryColor: Color,
     onNavigateBack: () -> Unit,
-    onImportSuccess: () -> Unit,
-    viewModel: ImportPreviewViewModel = hiltViewModel(),
-    courseViewModel: CourseViewModel = hiltViewModel()
+    onImportSuccess: (Long) -> Unit,
+    viewModel: ImportPreviewViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val periods by courseViewModel.periods.collectAsState()
-    
-    LaunchedEffect(uri, periods) {
-        android.util.Log.d("ImportPreviewScreen", "LaunchedEffect triggered: periods.size=${periods.size}")
-        // 等待periods加载完成后再调用loadPreview
-        // 如果periods为空，也调用loadPreview（使用空列表）
-        viewModel.loadPreview(
-            uri = uri,
-            semesterId = semesterId,
-            primaryColor = primaryColor,
-            strategy = takagi.ru.saison.domain.model.TimeMatchingStrategy.AutoCreatePeriods,
-            existingPeriods = periods
-        )
-    }
     
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.import_preview_title)) },
+                title = { Text(text = stringResource(R.string.import_preview)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "返回")
-                    }
-                },
-                actions = {
-                    when (uiState) {
-                        is ImportPreviewState.Preview -> {
-                            val state = uiState as ImportPreviewState.Preview
-                            IconButton(
-                                onClick = { viewModel.selectAll() },
-                                enabled = state.selectedIndices.size < state.courses.size
-                            ) {
-                                Icon(Icons.Default.CheckCircle, contentDescription = "全选")
-                            }
-                            IconButton(
-                                onClick = { viewModel.deselectAll() },
-                                enabled = state.selectedIndices.isNotEmpty()
-                            ) {
-                                Icon(Icons.Default.Cancel, contentDescription = "取消全选")
-                            }
-                        }
-                        else -> {}
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = stringResource(R.string.back)
+                        )
                     }
                 }
             )
-        },
-        bottomBar = {
-            when (uiState) {
-                is ImportPreviewState.Preview -> {
-                    val state = uiState as ImportPreviewState.Preview
-                    Surface(
-                        tonalElevation = 3.dp,
-                        shadowElevation = 8.dp
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = stringResource(
-                                    R.string.import_selected_count,
-                                    state.selectedIndices.size,
-                                    state.courses.size
-                                ),
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                            
-                            Button(
-                                onClick = { viewModel.confirmImport() },
-                                enabled = state.selectedIndices.isNotEmpty()
-                            ) {
-                                Icon(Icons.Default.Check, contentDescription = null)
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(stringResource(R.string.confirm_import))
-                            }
-                        }
-                    }
-                }
-                else -> {}
-            }
         }
     ) { paddingValues ->
         Box(
@@ -125,261 +53,472 @@ fun ImportPreviewScreen(
                 .padding(paddingValues)
         ) {
             when (val state = uiState) {
-                is ImportPreviewState.Idle -> {
-                    // 空状态
-                }
-                is ImportPreviewState.Loading -> {
+                is ImportPreviewUiState.Loading -> {
                     CircularProgressIndicator(
                         modifier = Modifier.align(Alignment.Center)
                     )
                 }
-                is ImportPreviewState.Preview -> {
-                    CoursePreviewList(
-                        courses = state.courses,
-                        selectedIndices = state.selectedIndices,
-                        duplicateWarnings = state.duplicateWarnings,
-                        suggestedSemesterStartDate = state.suggestedSemesterStartDate,
-                        onToggleSelection = { index ->
-                            viewModel.toggleCourseSelection(index)
-                        }
+                is ImportPreviewUiState.Error -> {
+                    ErrorContent(
+                        message = state.message,
+                        onRetry = { viewModel.retry() },
+                        onBack = onNavigateBack
                     )
                 }
-                is ImportPreviewState.Success -> {
-                    LaunchedEffect(Unit) {
-                        onImportSuccess()
-                    }
-                }
-                is ImportPreviewState.Error -> {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Error,
-                            contentDescription = null,
-                            modifier = Modifier.size(64.dp),
-                            tint = MaterialTheme.colorScheme.error
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            text = state.message,
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.error
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Button(onClick = onNavigateBack) {
-                            Text(stringResource(R.string.back))
-                        }
-                    }
+                is ImportPreviewUiState.Success -> {
+                    ImportPreviewContent(
+                        data = state.data,
+                        conflicts = state.conflicts,
+                        semesterName = state.semesterName,
+                        applyPeriodSettings = state.applyPeriodSettings,
+                        applyDisplaySettings = state.applyDisplaySettings,
+                        isImporting = state.isImporting,
+                        onSemesterNameChange = { viewModel.updateSemesterName(it) },
+                        onApplyPeriodSettingsChange = { viewModel.updateApplyPeriodSettings(it) },
+                        onApplyDisplaySettingsChange = { viewModel.updateApplyDisplaySettings(it) },
+                        onConfirm = { viewModel.executeImport() },
+                        onCancel = onNavigateBack
+                    )
                 }
             }
         }
     }
+    
+    // 监听导入成功事件
+    LaunchedEffect(Unit) {
+        viewModel.importSuccessEvent.collect { semesterId ->
+            onImportSuccess(semesterId)
+        }
+    }
 }
 
-/**
- * 课程预览列表
- */
 @Composable
-private fun CoursePreviewList(
-    courses: List<Course>,
-    selectedIndices: Set<Int>,
-    duplicateWarnings: List<String>,
-    suggestedSemesterStartDate: java.time.LocalDate? = null,
-    onToggleSelection: (Int) -> Unit
+private fun ImportPreviewContent(
+    data: SemesterExportData,
+    conflicts: ConflictInfo,
+    semesterName: String,
+    applyPeriodSettings: Boolean,
+    applyDisplaySettings: Boolean,
+    isImporting: Boolean,
+    onSemesterNameChange: (String) -> Unit,
+    onApplyPeriodSettingsChange: (Boolean) -> Unit,
+    onApplyDisplaySettingsChange: (Boolean) -> Unit,
+    onConfirm: () -> Unit,
+    onCancel: () -> Unit
 ) {
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+    Column(
+        modifier = Modifier.fillMaxSize()
     ) {
-        // 建议的学期开始日期
-        if (suggestedSemesterStartDate != null) {
+        LazyColumn(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth(),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // 学期信息
             item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.tertiaryContainer
-                    )
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.DateRange,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onTertiaryContainer
-                        )
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Column {
-                            Text(
-                                text = "检测到学期开始日期",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onTertiaryContainer
-                            )
-                            Text(
-                                text = "将自动设置为: ${suggestedSemesterStartDate.format(DateTimeFormatter.ofPattern("yyyy年MM月dd日"))}",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onTertiaryContainer
-                            )
-                        }
-                    }
-                }
+                SemesterInfoCard(
+                    data = data,
+                    semesterName = semesterName,
+                    hasNameConflict = conflicts.hasNameConflict,
+                    onSemesterNameChange = onSemesterNameChange
+                )
             }
-        }
-
-        // 重复警告
-        if (duplicateWarnings.isNotEmpty()) {
+            
+            // 节次设置
             item {
-                Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer
-                    )
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp)
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Warning,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.error
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = stringResource(R.string.duplicate_warning),
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.error
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        duplicateWarnings.forEach { warning ->
-                            Text(
-                                text = "• $warning",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onErrorContainer
-                            )
-                        }
-                    }
-                }
+                PeriodSettingsCard(
+                    data = data,
+                    applySettings = applyPeriodSettings,
+                    hasConflict = conflicts.hasPeriodSettingsConflict,
+                    onApplySettingsChange = onApplyPeriodSettingsChange
+                )
+            }
+            
+            // 显示设置
+            item {
+                DisplaySettingsCard(
+                    data = data,
+                    applySettings = applyDisplaySettings,
+                    hasConflict = conflicts.hasDisplaySettingsConflict,
+                    onApplySettingsChange = onApplyDisplaySettingsChange
+                )
+            }
+            
+            // 课程列表
+            item {
+                CourseListCard(courses = data.courses)
             }
         }
         
-        // 课程列表
-        itemsIndexed(courses) { index, course ->
-            CoursePreviewItem(
-                course = course,
-                isSelected = index in selectedIndices,
-                onToggle = { onToggleSelection(index) }
+        // 底部按钮
+        Surface(
+            tonalElevation = 3.dp
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                OutlinedButton(
+                    onClick = onCancel,
+                    modifier = Modifier.weight(1f),
+                    enabled = !isImporting
+                ) {
+                    Text(text = stringResource(R.string.cancel))
+                }
+                
+                Button(
+                    onClick = onConfirm,
+                    modifier = Modifier.weight(1f),
+                    enabled = !isImporting && semesterName.isNotBlank()
+                ) {
+                    if (isImporting) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Text(text = stringResource(R.string.confirm_import))
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SemesterInfoCard(
+    data: SemesterExportData,
+    semesterName: String,
+    hasNameConflict: Boolean,
+    onSemesterNameChange: (String) -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text(
+                text = stringResource(R.string.semester_info),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
+            
+            OutlinedTextField(
+                value = semesterName,
+                onValueChange = onSemesterNameChange,
+                label = { Text(text = stringResource(R.string.semester_name)) },
+                modifier = Modifier.fillMaxWidth(),
+                isError = hasNameConflict,
+                supportingText = if (hasNameConflict) {
+                    { Text(text = stringResource(R.string.semester_name_conflict)) }
+                } else null,
+                trailingIcon = if (hasNameConflict) {
+                    {
+                        Icon(
+                            imageVector = Icons.Default.Warning,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                    }
+                } else null
+            )
+            
+            InfoRow(
+                label = stringResource(R.string.date_range),
+                value = "${data.semesterInfo.startDate} - ${data.semesterInfo.endDate}"
+            )
+            
+            InfoRow(
+                label = stringResource(R.string.current_week),
+                value = "${data.semesterInfo.currentWeek} / ${data.semesterInfo.totalWeeks}"
             )
         }
     }
 }
 
-/**
- * 课程预览项
- */
 @Composable
-private fun CoursePreviewItem(
-    course: Course,
-    isSelected: Boolean,
-    onToggle: () -> Unit
+private fun PeriodSettingsCard(
+    data: SemesterExportData,
+    applySettings: Boolean,
+    hasConflict: Boolean,
+    onApplySettingsChange: (Boolean) -> Unit
 ) {
-    val timeFormatter = remember { DateTimeFormatter.ofPattern("HH:mm") }
-    
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = if (isSelected) {
-                MaterialTheme.colorScheme.primaryContainer
-            } else {
-                MaterialTheme.colorScheme.surface
-            }
-        )
+        modifier = Modifier.fillMaxWidth()
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Checkbox(
-                checked = isSelected,
-                onCheckedChange = { onToggle() }
-            )
-            
-            Spacer(modifier = Modifier.width(12.dp))
-            
-            Column(
-                modifier = Modifier.weight(1f)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = course.name,
+                    text = stringResource(R.string.period_settings),
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+                    color = MaterialTheme.colorScheme.primary
                 )
                 
-                Spacer(modifier = Modifier.height(4.dp))
-                
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+                if (hasConflict) {
                     Icon(
-                        imageVector = Icons.Default.Schedule,
+                        imageVector = Icons.Default.Warning,
                         contentDescription = null,
-                        modifier = Modifier.size(16.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = "${course.dayOfWeek} ${course.startTime.format(timeFormatter)}-${course.endTime.format(timeFormatter)}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(20.dp)
                     )
                 }
+            }
+            
+            InfoRow(
+                label = stringResource(R.string.total_periods),
+                value = data.periodSettings.totalPeriods.toString()
+            )
+            
+            InfoRow(
+                label = stringResource(R.string.period_duration),
+                value = "${data.periodSettings.periodDurationMinutes} ${stringResource(R.string.minutes)}"
+            )
+            
+            InfoRow(
+                label = stringResource(R.string.break_duration),
+                value = "${data.periodSettings.breakDurationMinutes} ${stringResource(R.string.minutes)}"
+            )
+            
+            InfoRow(
+                label = stringResource(R.string.first_period_start),
+                value = data.periodSettings.firstPeriodStartTime
+            )
+            
+            HorizontalDivider()
+            
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = stringResource(R.string.apply_period_settings),
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Switch(
+                    checked = applySettings,
+                    onCheckedChange = onApplySettingsChange
+                )
+            }
+            
+            if (hasConflict && applySettings) {
+                Text(
+                    text = stringResource(R.string.period_settings_will_be_overwritten),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun DisplaySettingsCard(
+    data: SemesterExportData,
+    applySettings: Boolean,
+    hasConflict: Boolean,
+    onApplySettingsChange: (Boolean) -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = stringResource(R.string.display_settings),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
                 
-                if (!course.location.isNullOrBlank()) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Place,
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = course.location,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+                if (hasConflict) {
+                    Icon(
+                        imageVector = Icons.Default.Warning,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+            
+            InfoRow(
+                label = stringResource(R.string.show_weekend),
+                value = if (data.displaySettings.showWeekend) 
+                    stringResource(R.string.yes) else stringResource(R.string.no)
+            )
+            
+            HorizontalDivider()
+            
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = stringResource(R.string.apply_display_settings),
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Switch(
+                    checked = applySettings,
+                    onCheckedChange = onApplySettingsChange
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun CourseListCard(courses: List<CourseData>) {
+    Card(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = stringResource(R.string.courses),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                
+                Text(
+                    text = "${courses.size} ${stringResource(R.string.courses_count)}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            
+            if (courses.isNotEmpty()) {
+                HorizontalDivider()
+                
+                courses.take(5).forEach { course ->
+                    CoursePreviewItem(course = course)
                 }
                 
-                if (course.periodStart != null && course.periodEnd != null) {
-                    Spacer(modifier = Modifier.height(4.dp))
+                if (courses.size > 5) {
                     Text(
-                        text = if (course.periodStart == course.periodEnd) {
-                            "第${course.periodStart}节"
-                        } else {
-                            "第${course.periodStart}-${course.periodEnd}节"
-                        },
+                        text = stringResource(R.string.and_more_courses, courses.size - 5),
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 8.dp)
                     )
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CoursePreviewItem(course: CourseData) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = course.name,
+                style = MaterialTheme.typography.bodyMedium
+            )
+            Text(
+                text = "${course.teacher ?: ""} ${course.location ?: ""}".trim(),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        
+        Text(
+            text = "${course.startTime}-${course.endTime}",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+@Composable
+private fun InfoRow(label: String, value: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyMedium
+        )
+    }
+}
+
+@Composable
+private fun ErrorContent(
+    message: String,
+    onRetry: () -> Unit,
+    onBack: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Icon(
+            imageVector = Icons.Default.Warning,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.error,
+            modifier = Modifier.size(64.dp)
+        )
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        Text(
+            text = message,
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.error
+        )
+        
+        Spacer(modifier = Modifier.height(24.dp))
+        
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            OutlinedButton(onClick = onBack) {
+                Text(text = stringResource(R.string.back))
+            }
+            
+            Button(onClick = onRetry) {
+                Text(text = stringResource(R.string.retry))
             }
         }
     }

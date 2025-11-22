@@ -196,11 +196,6 @@ private fun BottomNavTab.toNavItem(): NavItem = when (this) {
         labelRes = R.string.nav_pomodoro,
         route = Screen.Pomodoro.route
     )
-    BottomNavTab.METRONOME -> NavItem(
-        icon = Icons.Default.MusicNote,
-        labelRes = R.string.nav_metronome,
-        route = Screen.Metronome.route
-    )
     BottomNavTab.SUBSCRIPTION -> NavItem(
         icon = Icons.Default.Loyalty, // Or CardMembership, or Subscriptions if available
         labelRes = R.string.nav_subscription,
