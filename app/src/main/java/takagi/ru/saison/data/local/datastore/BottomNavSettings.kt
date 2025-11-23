@@ -13,9 +13,9 @@ enum class BottomNavTab {
     
     companion object {
         val DEFAULT_ORDER = listOf(
-            CALENDAR,
             TASKS,
             COURSE,
+            CALENDAR,
             POMODORO,
             SUBSCRIPTION,
             SETTINGS
@@ -66,9 +66,9 @@ enum class BottomNavTab {
 data class BottomNavVisibility(
     val course: Boolean = true,
     val tasks: Boolean = true,
-    val pomodoro: Boolean = true,
-    val subscription: Boolean = true,
-    val settings: Boolean = true  // 设置项始终可见
+    val pomodoro: Boolean = false,  // 默认隐藏
+    val subscription: Boolean = false,  // 默认隐藏
+    val settings: Boolean = true  // 设置项始终可见，不可关闭
 ) {
     /**
      * 检查指定标签是否可见

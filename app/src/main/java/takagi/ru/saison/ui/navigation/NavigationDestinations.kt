@@ -31,4 +31,7 @@ sealed class Screen(val route: String) {
         fun createRoute(taskId: Long) = "routine_detail/$taskId"
     }
     object Subscription : Screen("subscription")
+    object SubscriptionDetail : Screen("subscription_detail/{subscriptionId}") {
+        fun createRoute(subscriptionId: Long) = "subscription_detail/$subscriptionId"
+    }
 }

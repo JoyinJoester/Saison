@@ -114,7 +114,11 @@ fun SettingsScreen(
                 }
                 is SettingsUiEvent.RestartRequired -> {
                     // 重新创建 Activity 以应用语言更改
-                    (context as? android.app.Activity)?.recreate()
+                    android.util.Log.d("SettingsScreen", "RestartRequired event received")
+                    val activity = context as? android.app.Activity
+                    android.util.Log.d("SettingsScreen", "Activity: $activity")
+                    activity?.recreate()
+                    android.util.Log.d("SettingsScreen", "recreate() called")
                 }
                 is SettingsUiEvent.NavigateToSystemSettings -> {
                     // TODO: 导航到系统设置
@@ -124,6 +128,7 @@ fun SettingsScreen(
     }
     
     Scaffold(
+        contentWindowInsets = WindowInsets(0.dp),
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.settings_title)) },
@@ -765,9 +770,11 @@ private fun ThemeBottomSheet(
                         derivedStateOf { theme == currentTheme }
                     }
                     
+                    val themeName = getThemeName(theme)
+                    
                     ThemePreviewCard(
                         theme = theme,
-                        themeName = getThemeName(theme),
+                        themeName = themeName,
                         isSelected = isSelected,
                         onClick = {
                             // 错误处理：主题应用
@@ -780,7 +787,7 @@ private fun ThemeBottomSheet(
                                 if (accessibilityManager?.isEnabled == true) {
                                     val event = android.view.accessibility.AccessibilityEvent.obtain().apply {
                                         eventType = android.view.accessibility.AccessibilityEvent.TYPE_ANNOUNCEMENT
-                                        text.add("已选择${getThemeName(theme)}主题")
+                                        text.add("已选择${themeName}主题")
                                     }
                                     accessibilityManager.sendAccessibilityEvent(event)
                                 }
@@ -814,6 +821,7 @@ private fun LanguageSelectionDialog(
     onDismiss: () -> Unit
 ) {
     val languages = listOf(
+        "system" to stringResource(R.string.language_system),
         "zh" to stringResource(R.string.language_zh_cn),
         "en" to stringResource(R.string.language_en),
         "ja" to stringResource(R.string.language_ja),
@@ -1013,32 +1021,34 @@ private fun AboutDialog(onDismiss: () -> Unit) {
     )
 }
 
+@Composable
 private fun getThemeName(theme: SeasonalTheme): String {
     return when (theme) {
-        SeasonalTheme.DYNAMIC -> "动态"
-        SeasonalTheme.AUTO_SEASONAL -> "四季 (${takagi.ru.saison.util.SeasonHelper.getCurrentSeasonName()})"
-        SeasonalTheme.SAKURA -> "樱花"
-        SeasonalTheme.MINT -> "薄荷"
-        SeasonalTheme.AMBER -> "琥珀"
-        SeasonalTheme.SNOW -> "雪"
-        SeasonalTheme.RAIN -> "雨"
-        SeasonalTheme.MAPLE -> "枫叶"
-        SeasonalTheme.OCEAN -> "海洋"
-        SeasonalTheme.SUNSET -> "日落"
-        SeasonalTheme.FOREST -> "森林"
-        SeasonalTheme.LAVENDER -> "薰衣草"
-        SeasonalTheme.DESERT -> "沙漠"
-        SeasonalTheme.AURORA -> "极光"
+        SeasonalTheme.DYNAMIC -> stringResource(R.string.theme_dynamic)
+        SeasonalTheme.AUTO_SEASONAL -> stringResource(R.string.theme_auto_seasonal)
+        SeasonalTheme.SAKURA -> stringResource(R.string.theme_sakura)
+        SeasonalTheme.MINT -> stringResource(R.string.theme_mint)
+        SeasonalTheme.AMBER -> stringResource(R.string.theme_amber)
+        SeasonalTheme.SNOW -> stringResource(R.string.theme_snow)
+        SeasonalTheme.RAIN -> stringResource(R.string.theme_rain)
+        SeasonalTheme.MAPLE -> stringResource(R.string.theme_maple)
+        SeasonalTheme.OCEAN -> stringResource(R.string.theme_ocean)
+        SeasonalTheme.SUNSET -> stringResource(R.string.theme_sunset)
+        SeasonalTheme.FOREST -> stringResource(R.string.theme_forest)
+        SeasonalTheme.LAVENDER -> stringResource(R.string.theme_lavender)
+        SeasonalTheme.DESERT -> stringResource(R.string.theme_desert)
+        SeasonalTheme.AURORA -> stringResource(R.string.theme_aurora)
     }
 }
 
 private fun getLanguageName(code: String): String {
     return when (code) {
+        "system" -> "跟随系统"
         "zh" -> "简体中文"
         "en" -> "English"
         "ja" -> "日本語"
         "vi" -> "Tiếng Việt"
-        else -> "简体中文"
+        else -> "跟随系统"
     }
 }
 

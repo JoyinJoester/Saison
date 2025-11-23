@@ -56,6 +56,7 @@ class PreferencesManager @Inject constructor(
         val BOTTOM_NAV_EVENTS = booleanPreferencesKey("bottom_nav_events")
         val BOTTOM_NAV_ROUTINE = booleanPreferencesKey("bottom_nav_routine")
         val BOTTOM_NAV_POMODORO = booleanPreferencesKey("bottom_nav_pomodoro")
+        val BOTTOM_NAV_SUBSCRIPTION = booleanPreferencesKey("bottom_nav_subscription")
         val BOTTOM_NAV_SETTINGS = booleanPreferencesKey("bottom_nav_settings")
         val BOTTOM_NAV_ORDER = stringPreferencesKey("bottom_nav_order")
         
@@ -152,7 +153,7 @@ class PreferencesManager @Inject constructor(
     // Language
     val language: Flow<String> = dataStore.data
         .map { preferences ->
-            preferences[PreferencesKeys.LANGUAGE] ?: "en"
+            preferences[PreferencesKeys.LANGUAGE] ?: "system"
         }
     
     suspend fun setLanguage(languageCode: String) {
@@ -392,7 +393,8 @@ class PreferencesManager @Inject constructor(
             BottomNavVisibility(
                 course = preferences[PreferencesKeys.BOTTOM_NAV_COURSE] ?: true,
                 tasks = preferences[PreferencesKeys.BOTTOM_NAV_TASKS] ?: true,
-                pomodoro = preferences[PreferencesKeys.BOTTOM_NAV_POMODORO] ?: true,
+                pomodoro = preferences[PreferencesKeys.BOTTOM_NAV_POMODORO] ?: false,  // 默认隐藏
+                subscription = preferences[PreferencesKeys.BOTTOM_NAV_SUBSCRIPTION] ?: false,  // 默认隐藏
                 settings = preferences[PreferencesKeys.BOTTOM_NAV_SETTINGS] ?: true
             )
         }
@@ -412,11 +414,10 @@ class PreferencesManager @Inject constructor(
                 }
                 BottomNavTab.TASKS -> preferences[PreferencesKeys.BOTTOM_NAV_TASKS] = visible
                 BottomNavTab.POMODORO -> preferences[PreferencesKeys.BOTTOM_NAV_POMODORO] = visible
-                BottomNavTab.SUBSCRIPTION -> {
-                    // SUBSCRIPTION tab visibility is not stored in preferences
-                    // It's always visible or controlled elsewhere
+                BottomNavTab.SUBSCRIPTION -> preferences[PreferencesKeys.BOTTOM_NAV_SUBSCRIPTION] = visible
+                BottomNavTab.SETTINGS -> {
+                    // SETTINGS tab visibility is always true, cannot be changed
                 }
-                BottomNavTab.SETTINGS -> preferences[PreferencesKeys.BOTTOM_NAV_SETTINGS] = visible
             }
         }
     }

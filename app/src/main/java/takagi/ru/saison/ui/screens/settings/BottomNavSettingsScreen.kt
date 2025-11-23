@@ -59,7 +59,12 @@ fun BottomNavSettingsScreen(
             
             configurableTabs.forEachIndexed { index, tab ->
                 val isVisible = bottomNavVisibility.isVisible(tab)
-                val switchEnabled = !isVisible || visibleCount > 1
+                // 设置项永远不能被关闭
+                val switchEnabled = if (tab == BottomNavTab.SETTINGS) {
+                    false
+                } else {
+                    !isVisible || visibleCount > 1
+                }
                 
                 BottomNavConfigRow(
                     icon = tab.toIcon(),

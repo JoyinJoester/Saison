@@ -1,2 +1,0 @@
-• New: setting to hide subdivision controls on main screen when not in use
-• Fixed: elapsed time dialog hidden after screen orientation change

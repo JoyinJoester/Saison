@@ -12,6 +12,14 @@
     <string name="nav_subscription">Subscription</string>
     <string name="nav_settings">Settings</string>
     
+    <!-- Navigation - Abbreviated -->
+    <string name="nav_calendar_short">Cal</string>
+    <string name="nav_course_short">Course</string>
+    <string name="nav_tasks_short">Tasks</string>
+    <string name="nav_pomodoro_short">Timer</string>
+    <string name="nav_subscription_short">Sub</string>
+    <string name="nav_settings_short">Set</string>
+    
     <!-- Common Actions -->
     <string name="action_add">Add</string>
     <string name="action_edit">Edit</string>
@@ -89,6 +97,7 @@
     
     <!-- Themes -->
     <string name="theme_dynamic">Dynamic</string>
+    <string name="theme_auto_seasonal">Saison</string>
     <string name="theme_sakura">Sakura</string>
     <string name="theme_mint">Mint</string>
     <string name="theme_amber">Amber</string>
@@ -250,6 +259,7 @@
     <string name="settings_webdav_test_success">✓ Connection successful</string>
     <string name="settings_webdav_test_error">✗ %s</string>
     
+    <string name="language_system">Follow System</string>
     <string name="language_zh_cn">简体中文</string>
     <string name="language_en">English</string>
     <string name="language_ja">日本語</string>
@@ -302,6 +312,7 @@
     <!-- Course Module -->
     <string name="course_title">Course Schedule</string>
     <string name="course_action_add">Add Course</string>
+    <string name="course_action_view_all">View All Courses</string>
     <string name="course_week_format">Week %d</string>
     <string name="course_pattern_all">All</string>
     <string name="course_pattern_a">Week A</string>
@@ -311,6 +322,35 @@
     <string name="course_count_format">%d classes</string>
     <string name="course_empty_no_courses">No courses yet</string>
     <string name="course_empty_hint">Tap the button below to add a course</string>
+    
+    <!-- Course Group Management -->
+    <string name="course_group_schedule_count">%d times</string>
+    <string name="course_action_add_schedule">Add Schedule</string>
+    <string name="course_action_delete_course">Delete Course</string>
+    <string name="course_schedule_item_edit">Edit</string>
+    <string name="course_schedule_item_delete">Delete</string>
+    <string name="course_conflict_warning">Time conflict: conflicts with %s</string>
+    <string name="course_delete_confirm_title">Confirm Delete</string>
+    <string name="course_delete_confirm_message" formatted="false">Will delete all %d schedules of \"%s\", this action cannot be undone.</string>
+    <string name="course_delete_last_schedule_warning">This is the last schedule, deleting it will delete the entire course</string>
+    <string name="course_basic_info">Basic Information</string>
+    <string name="course_name">Course Name</string>
+    <string name="course_instructor">Instructor (Optional)</string>
+    <string name="course_color">Course Color</string>
+    <string name="course_save_basic_info">Save Basic Info</string>
+    <string name="course_schedules">Schedules</string>
+    <string name="course_edit_title">Edit Course</string>
+    <string name="course_add_schedule_title">Add Schedule</string>
+    <string name="course_day_of_week">Day of Week</string>
+    <string name="course_period">Period</string>
+    <string name="course_period_start">Start Period</string>
+    <string name="course_period_end">End Period</string>
+    <string name="course_location">Location (Optional)</string>
+    <string name="course_week_pattern">Week Pattern</string>
+    <string name="course_info_updated">Course info updated</string>
+    <string name="course_deleted">Course deleted</string>
+    <string name="course_schedule_added">Schedule added</string>
+    <string name="course_schedule_deleted">Schedule deleted</string>
     
     <!-- Calendar Module -->
     <string name="calendar_view_month">Month</string>
@@ -409,7 +449,7 @@
     <string name="duration_clear">Clear</string>
     <string name="duration_format_hours">%d hour(s)</string>
     <string name="duration_format_minutes">%d minute(s)</string>
-    <string name="duration_format_hours_minutes">%d hour(s) %d minute(s)</string>
+    <string name="duration_format_hours_minutes" formatted="false">%d hour(s) %d minute(s)</string>
     
     <!-- Task Preview -->
     <string name="task_preview_title">Task Details</string>
@@ -600,7 +640,7 @@
     
     <!-- Course Timetable UI Enhancement -->
     <string name="period_number_format">Period %d</string>
-    <string name="time_range_format">%s-%s</string>
+    <string name="time_range_format" formatted="false">%s-%s</string>
     <string name="week_number_format">Week %1$d / %2$d</string>
     <string name="empty_timetable_message">No courses this week</string>
     <string name="empty_timetable_action">Add Course</string>
@@ -690,5 +730,78 @@
     <string name="courses_count">courses</string>
     <string name="and_more_courses">And %d more courses</string>
     <string name="retry">Retry</string>
+
+    <!-- Subscription Module -->
+    <string name="subscription_title">Subscriptions</string>
+    <string name="subscription_more_action">More</string>
+    <string name="subscription_add_action">Add Subscription</string>
+    <string name="subscription_empty_message">No subscriptions yet, tap the button below to add one</string>
+    
+    <!-- Subscription Card -->
+    <string name="subscription_accumulated_prefix">Total</string>
+    <string name="subscription_next_renewal">Next Renewal</string>
+    <string name="subscription_overdue_days">Overdue %1$d days</string>
+    <string name="subscription_action_menu">Actions</string>
+    <string name="subscription_action_delete">Delete</string>
+    
+    <!-- Cycle Types -->
+    <string name="subscription_cycle_monthly">Monthly</string>
+    <string name="subscription_cycle_quarterly">Quarterly</string>
+    <string name="subscription_cycle_yearly">Yearly</string>
+    <string name="subscription_cycle_custom">Custom</string>
+    
+    <!-- Add Subscription Sheet -->
+    <string name="subscription_add_title">Add Subscription</string>
+    <string name="subscription_edit_title">Edit Subscription</string>
+    <string name="subscription_field_name">Name</string>
+    <string name="subscription_field_category">Category</string>
+    <string name="subscription_field_price">Price</string>
+    <string name="subscription_field_cycle_type">Cycle Type</string>
+    <string name="subscription_field_start_date">Start Date</string>
+    <string name="subscription_field_reminder">Reminder</string>
+    <string name="subscription_field_reminder_days">Remind me before</string>
+    <string name="subscription_reminder_days_format">%d days</string>
+    <string name="subscription_default_category">Digital Products</string>
+    <string name="subscription_add_button">Add</string>
+    <string name="subscription_save_button">Save</string>
+    <string name="subscription_confirm_button">Confirm</string>
+    <string name="subscription_cancel_button">Cancel</string>
+    
+    <!-- Time Units -->
+    <string name="subscription_per_day">/day</string>
+    <string name="subscription_per_month">/month</string>
+    
+    <!-- Delete Confirmation -->
+    <string name="subscription_delete_confirm_message">Are you sure you want to delete subscription \"%1$s\"? This action cannot be undone.</string>
+    
+    <!-- Auto-renewal -->
+    <string name="subscription_auto_renewal">Auto-renewal</string>
+    <string name="subscription_auto_renewal_hint">Automatically calculate next renewal date after expiration</string>
+    <string name="subscription_auto_renewal_enabled_desc">Will auto-renew after expiration</string>
+    <string name="subscription_auto_renewal_disabled_desc">Requires manual renewal after expiration</string>
+    
+    <!-- Subscription Detail -->
+    <string name="subscription_detail_title">Subscription Details</string>
+    <string name="subscription_action_edit">Edit</string>
+    <string name="subscription_statistics_title">Statistics</string>
+    <string name="subscription_accumulated_cost">Total Cost</string>
+    <string name="subscription_accumulated_duration">Total Duration</string>
+    <string name="subscription_average_monthly">Avg Monthly</string>
+    <string name="subscription_average_daily">Avg Daily</string>
+    <string name="subscription_renewal_status">Renewal Status</string>
+    <string name="subscription_days_until_renewal">%1$d days until renewal</string>
+    <string name="subscription_info_title">Subscription Info</string>
+    <string name="subscription_price">Price</string>
+    <string name="subscription_cycle_type">Cycle Type</string>
+    <string name="subscription_start_date">Start Date</string>
+    <string name="subscription_note">Note</string>
+    
+    <!-- Manual Renewal -->
+    <string name="subscription_manual_renew">Manual Renew</string>
+    <string name="subscription_select_renewal_duration">Select renewal duration</string>
+    <string name="subscription_total_cost">Total Cost</string>
+    <string name="subscription_new_expiration_date">New Expiration Date</string>
+    <string name="subscription_confirm_renewal">Confirm Renewal</string>
+    <string name="subscription_expires_on">Expires: %1$s</string>
 
 </resources>

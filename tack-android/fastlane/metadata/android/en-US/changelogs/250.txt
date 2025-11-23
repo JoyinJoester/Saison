@@ -1,5 +1,0 @@
-• New: option for muted bars
-• New: adjustable tempo limit for incremental tempo change
-• Improved: removed squiggly timer slider in favor of big slider for better accessibility
-• Fixed: incorrect default value for permanent notification setting
-• Fixed: incorrect grammar in some translations with quantities

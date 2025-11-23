@@ -9,6 +9,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -37,6 +38,7 @@ fun CourseSettingsSheet(
     onDismiss: () -> Unit,
     onSave: (CourseSettings) -> Unit,
     onNavigateToSemesterManagement: () -> Unit = {},
+    onNavigateToAllCourses: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var settings by remember { mutableStateOf(currentSettings) }
@@ -201,6 +203,32 @@ fun CourseSettingsSheet(
                             color = MaterialTheme.colorScheme.primary
                         )
                     }
+                }
+                
+                Spacer(modifier = Modifier.height(24.dp))
+                
+                // 课程管理
+                Text(
+                    text = "课程管理",
+                    style = MaterialTheme.typography.titleMedium
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                // 查看所有课程按钮
+                OutlinedButton(
+                    onClick = {
+                        onDismiss() // 先关闭当前Sheet
+                        onNavigateToAllCourses() // 然后导航到所有课程页面
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.List,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(androidx.compose.ui.res.stringResource(takagi.ru.saison.R.string.course_action_view_all))
                 }
                 
                 Spacer(modifier = Modifier.height(24.dp))

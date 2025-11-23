@@ -102,11 +102,12 @@ fun CalendarScreen(
     }
 
     Scaffold(
-        // Remove default topBar to customize header
+        contentWindowInsets = WindowInsets(0.dp)
     ) { paddingValues ->
         Column(
             modifier = Modifier
                 .padding(paddingValues)
+                .statusBarsPadding()
                 .fillMaxSize()
         ) {
             // Custom Calendar Header
@@ -527,7 +528,7 @@ fun ScheduleList(
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         if (courses.isNotEmpty()) {

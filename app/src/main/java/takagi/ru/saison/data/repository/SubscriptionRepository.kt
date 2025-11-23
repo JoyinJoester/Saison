@@ -23,4 +23,10 @@ class SubscriptionRepository @Inject constructor(
     suspend fun deleteSubscription(subscription: SubscriptionEntity) = subscriptionDao.deleteSubscription(subscription)
     
     suspend fun deleteSubscriptionById(id: Long) = subscriptionDao.deleteSubscriptionById(id)
+    
+    fun getSubscriptionsRequiringManualRenewal(currentTime: Long): Flow<List<SubscriptionEntity>> = 
+        subscriptionDao.getSubscriptionsRequiringManualRenewal(currentTime)
+    
+    suspend fun updateRenewalDate(id: Long, newDate: Long) = 
+        subscriptionDao.updateRenewalDate(id, newDate, System.currentTimeMillis())
 }

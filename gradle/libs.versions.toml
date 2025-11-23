@@ -49,6 +49,9 @@ coil = "2.7.0"
 accompanist = "0.34.0"
 mockk = "1.13.10"
 
+# Splash Screen
+splashscreen = "1.0.1"
+
 # Material3 Extended
 material3Adaptive = "1.0.0"
 
@@ -58,6 +61,7 @@ biometric = "1.2.0-alpha05"
 [libraries]
 # Core Android
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-core-splashscreen = { group = "androidx.core", name = "core-splashscreen", version.ref = "splashscreen" }
 androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
 androidx-lifecycle-viewmodel-ktx = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-ktx", version.ref = "lifecycleRuntimeKtx" }
 androidx-lifecycle-viewmodel-compose = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-compose", version.ref = "lifecycleRuntimeKtx" }

@@ -15,6 +15,7 @@ data class SubscriptionEntity(
     val cycleDuration: Int = 1,
     val startDate: Long, // Timestamp
     val nextRenewalDate: Long, // Timestamp
+    val autoRenewal: Boolean = true, // NEW: Auto-renewal enabled by default
     val reminderEnabled: Boolean = false,
     val reminderDaysBefore: Int = 1,
     val note: String? = null,

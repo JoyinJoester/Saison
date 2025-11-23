@@ -9,20 +9,24 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import takagi.ru.saison.ui.components.CourseCard
-import java.time.DayOfWeek
+import kotlinx.coroutines.launch
+import takagi.ru.saison.ui.components.AddScheduleDialog
+import takagi.ru.saison.ui.components.CourseGroupCard
+import takagi.ru.saison.ui.components.UnifiedCourseEditSheet
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AllCoursesScreen(
     onNavigateBack: () -> Unit,
-    onCourseClick: (Long) -> Unit,
     viewModel: CourseViewModel = hiltViewModel()
 ) {
-    val coursesByDay by viewModel.coursesByDay.collectAsState()
+    val courseGroups by viewModel.courseGroups.collectAsState()
+    val selectedCourseGroup by viewModel.selectedCourseGroup.collectAsState()
+    var showAddScheduleDialog by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
     
     Scaffold(
         topBar = {
@@ -34,9 +38,10 @@ fun AllCoursesScreen(
                     }
                 }
             )
-        }
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
-        if (coursesByDay.isEmpty()) {
+        if (courseGroups.isEmpty()) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -55,62 +60,84 @@ fun AllCoursesScreen(
                     .fillMaxSize()
                     .padding(paddingValues),
                 contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                coursesByDay.forEach { (day, courses) ->
-                    item {
-                        DayHeader(day, courses.size)
-                    }
-                    items(courses) { course ->
-                        CourseCard(
-                            course = course,
-                            onClick = { onCourseClick(course.id) }
-                        )
-                    }
-                    item {
-                        Spacer(modifier = Modifier.height(8.dp))
-                    }
+                items(
+                    items = courseGroups,
+                    key = { it.courseName }
+                ) { courseGroup ->
+                    CourseGroupCard(
+                        courseGroup = courseGroup,
+                        onClick = { viewModel.selectCourseGroup(courseGroup.courseName) }
+                    )
                 }
             }
         }
     }
-}
-
-@Composable
-private fun DayHeader(day: DayOfWeek, count: Int) {
-    Surface(
-        color = MaterialTheme.colorScheme.surfaceVariant,
-        shape = MaterialTheme.shapes.small,
-        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = getDayName(day),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(modifier = Modifier.weight(1f))
-            Text(
-                text = "$count 节课",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
+    
+    // 统一课程编辑弹窗
+    selectedCourseGroup?.let { courseGroup ->
+        UnifiedCourseEditSheet(
+            courseGroup = courseGroup,
+            onDismiss = { viewModel.clearSelectedCourseGroup() },
+            onSaveBasicInfo = { name, instructor, color ->
+                viewModel.updateCourseGroupInfo(
+                    oldName = courseGroup.courseName,
+                    newName = name,
+                    instructor = instructor,
+                    color = color
+                )
+                scope.launch {
+                    snackbarHostState.showSnackbar("课程信息已更新")
+                }
+            },
+            onDeleteCourse = {
+                viewModel.deleteCourseGroup(courseGroup.courseName)
+                viewModel.clearSelectedCourseGroup()
+                scope.launch {
+                    snackbarHostState.showSnackbar("课程已删除")
+                }
+            },
+            onAddSchedule = {
+                showAddScheduleDialog = true
+            },
+            onEditSchedule = { course ->
+                // TODO: 实现编辑单个上课时间
+            },
+            onDeleteSchedule = { course ->
+                viewModel.deleteCourse(course.id)
+                // 刷新选中的课程组
+                viewModel.selectCourseGroup(courseGroup.courseName)
+                scope.launch {
+                    snackbarHostState.showSnackbar("上课时间已删除")
+                }
+            }
+        )
     }
-}
-
-private fun getDayName(day: DayOfWeek): String {
-    return when (day) {
-        DayOfWeek.MONDAY -> "周一"
-        DayOfWeek.TUESDAY -> "周二"
-        DayOfWeek.WEDNESDAY -> "周三"
-        DayOfWeek.THURSDAY -> "周四"
-        DayOfWeek.FRIDAY -> "周五"
-        DayOfWeek.SATURDAY -> "周六"
-        DayOfWeek.SUNDAY -> "周日"
+    
+    // 添加上课时间对话框
+    if (showAddScheduleDialog && selectedCourseGroup != null) {
+        AddScheduleDialog(
+            existingCourses = selectedCourseGroup!!.courses,
+            onDismiss = { showAddScheduleDialog = false },
+            onConfirm = { day, periodStart, periodEnd, location, weekPattern, customWeeks ->
+                viewModel.addScheduleToCourseGroup(
+                    courseName = selectedCourseGroup!!.courseName,
+                    dayOfWeek = day,
+                    periodStart = periodStart,
+                    periodEnd = periodEnd,
+                    location = location,
+                    weekPattern = weekPattern,
+                    customWeeks = customWeeks
+                )
+                showAddScheduleDialog = false
+                scope.launch {
+                    snackbarHostState.showSnackbar("上课时间已添加")
+                }
+            },
+            onCheckConflict = { day, periodStart, periodEnd ->
+                viewModel.checkPeriodConflict(day, periodStart, periodEnd)
+            }
+        )
     }
 }

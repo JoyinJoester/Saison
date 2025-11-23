@@ -164,6 +164,7 @@ fun CourseScreen(
     }
     
     Scaffold(
+        contentWindowInsets = WindowInsets(0.dp),
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = { showAddSheet = true },
@@ -182,6 +183,7 @@ fun CourseScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
                 .background(MaterialTheme.colorScheme.surface)
+                .statusBarsPadding()
         ) {
             // Custom Header
             CourseHeader(
@@ -253,7 +255,8 @@ fun CourseScreen(
                 viewModel.updateSettings(newSettings)
                 showSettingsSheet = false
             },
-            onNavigateToSemesterManagement = { showSemesterList = true }
+            onNavigateToSemesterManagement = { showSemesterList = true },
+            onNavigateToAllCourses = onNavigateToAllCourses
         )
     }
     

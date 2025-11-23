@@ -18,21 +18,21 @@ class ThemeViewModel @Inject constructor(
     val currentTheme: StateFlow<SeasonalTheme> = themeManager.currentTheme
         .stateIn(
             viewModelScope,
-            SharingStarted.Eagerly,
+            SharingStarted.WhileSubscribed(5000),
             SeasonalTheme.DYNAMIC
         )
     
     val themeMode: StateFlow<ThemeMode> = themeManager.themeMode
         .stateIn(
             viewModelScope,
-            SharingStarted.Eagerly,
+            SharingStarted.WhileSubscribed(5000),
             ThemeMode.FOLLOW_SYSTEM
         )
     
     val useDynamicColor: StateFlow<Boolean> = themeManager.useDynamicColor
         .stateIn(
             viewModelScope,
-            SharingStarted.Eagerly,
+            SharingStarted.WhileSubscribed(5000),
             true
         )
 }

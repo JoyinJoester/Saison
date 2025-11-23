@@ -1,5 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="Theme.Saison" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="Theme.Saison" parent="android:Theme.Material.Light.NoActionBar">
+        <!-- 设置窗口背景为白色，避免启动时闪烁 -->
+        <item name="android:windowBackground">@android:color/white</item>
+        <!-- 状态栏透明 -->
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <!-- 导航栏透明 -->
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <!-- 状态栏图标为深色（浅色模式） -->
+        <item name="android:windowLightStatusBar">true</item>
+        <!-- 导航栏图标为深色（浅色模式） -->
+        <item name="android:windowLightNavigationBar">true</item>
+        
+        <!-- Splash Screen 配置 (Android 12+) -->
+        <item name="android:windowSplashScreenBackground">@android:color/white</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+        <item name="android:windowSplashScreenAnimationDuration">200</item>
+    </style>
 </resources>

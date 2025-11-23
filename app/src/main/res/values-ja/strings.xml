@@ -9,7 +9,16 @@
     <string name="nav_tasks">タスク</string>
     <string name="nav_pomodoro">集中</string>
     <string name="nav_metronome">拍子</string>
+    <string name="nav_subscription">サブスク</string>
     <string name="nav_settings">設定</string>
+    
+    <!-- Navigation - Abbreviated -->
+    <string name="nav_calendar_short">日历</string>
+    <string name="nav_course_short">授業</string>
+    <string name="nav_tasks_short">任务</string>
+    <string name="nav_pomodoro_short">集中</string>
+    <string name="nav_subscription_short">订阅</string>
+    <string name="nav_settings_short">设定</string>
     
     <!-- Common Actions -->
     <string name="action_add">追加</string>
@@ -88,6 +97,7 @@
     
     <!-- Themes -->
     <string name="theme_dynamic">ダイナミック</string>
+    <string name="theme_auto_seasonal">Saison</string>
     <string name="theme_sakura">桜</string>
     <string name="theme_mint">ミント</string>
     <string name="theme_amber">琥珀</string>
@@ -199,6 +209,7 @@
     <string name="settings_webdav_test_success">✓ 接続成功</string>
     <string name="settings_webdav_test_error">✗ %s</string>
     
+    <string name="language_system">システムに従う</string>
     <string name="language_zh_cn">简体中文</string>
     <string name="language_en">English</string>
     <string name="language_ja">日本語</string>
@@ -251,6 +262,7 @@
     <!-- Course Module -->
     <string name="course_title">授業スケジュール</string>
     <string name="course_action_add">授業を追加</string>
+    <string name="course_action_view_all">すべての授業を表示</string>
     <string name="course_week_format">第 %d 週</string>
     <string name="course_pattern_all">すべて</string>
     <string name="course_pattern_a">A週</string>
@@ -260,6 +272,35 @@
     <string name="course_count_format">%d コマ</string>
     <string name="course_empty_no_courses">まだ授業がありません</string>
     <string name="course_empty_hint">下のボタンをタップして授業を追加</string>
+    
+    <!-- 授業グループ管理 -->
+    <string name="course_group_schedule_count">%d回</string>
+    <string name="course_action_add_schedule">授業時間を追加</string>
+    <string name="course_action_delete_course">授業を削除</string>
+    <string name="course_schedule_item_edit">編集</string>
+    <string name="course_schedule_item_delete">削除</string>
+    <string name="course_conflict_warning">時間が重複：%sと重複しています</string>
+    <string name="course_delete_confirm_title">削除の確認</string>
+    <string name="course_delete_confirm_message" formatted="false">「%s」のすべての%d個の授業時間を削除します。この操作は元に戻せません。</string>
+    <string name="course_delete_last_schedule_warning">これは最後の授業時間です。削除すると授業全体が削除されます</string>
+    <string name="course_basic_info">基本情報</string>
+    <string name="course_name">授業名</string>
+    <string name="course_instructor">教員名（任意）</string>
+    <string name="course_color">授業の色</string>
+    <string name="course_save_basic_info">基本情報を保存</string>
+    <string name="course_schedules">授業時間</string>
+    <string name="course_edit_title">授業を編集</string>
+    <string name="course_add_schedule_title">授業時間を追加</string>
+    <string name="course_day_of_week">曜日</string>
+    <string name="course_period">時限</string>
+    <string name="course_period_start">開始時限</string>
+    <string name="course_period_end">終了時限</string>
+    <string name="course_location">教室（任意）</string>
+    <string name="course_week_pattern">週パターン</string>
+    <string name="course_info_updated">授業情報が更新されました</string>
+    <string name="course_deleted">授業が削除されました</string>
+    <string name="course_schedule_added">授業時間が追加されました</string>
+    <string name="course_schedule_deleted">授業時間が削除されました</string>
     
     <!-- Calendar Module -->
     <string name="calendar_view_month">月</string>
@@ -358,7 +399,7 @@
     <string name="duration_clear">クリア</string>
     <string name="duration_format_hours">%d時間</string>
     <string name="duration_format_minutes">%d分</string>
-    <string name="duration_format_hours_minutes">%d時間%d分</string>
+    <string name="duration_format_hours_minutes" formatted="false">%d時間%d分</string>
     
     <!-- タスクプレビュー -->
     <string name="task_preview_title">タスク詳細</string>
@@ -554,7 +595,7 @@
     
     <!-- 時間割UI最適化 -->
     <string name="period_number_format">第%d時限</string>
-    <string name="time_range_format">%s-%s</string>
+    <string name="time_range_format" formatted="false">%s-%s</string>
     <string name="week_number_format">第%1$d / %2$d週</string>
     <string name="empty_timetable_message">今週は授業がありません</string>
     <string name="empty_timetable_action">授業を追加</string>
@@ -626,4 +667,78 @@
     <string name="import_success">インポート成功：%1$d件の授業をインポート、%2$d件をスキップ</string>
     <string name="import_error">インポート失敗：%s</string>
     <string name="import_in_progress">インポート中...</string>
+
+    <!-- サブスクリプションモジュール -->
+    <string name="subscription_title">サブスクリプション</string>
+    <string name="subscription_more_action">その他</string>
+    <string name="subscription_add_action">サブスクリプションを追加</string>
+    <string name="subscription_empty_message">サブスクリプションがありません。下のボタンをタップして追加してください</string>
+    
+    <!-- サブスクリプションカード -->
+    <string name="subscription_accumulated_prefix">累計</string>
+    <string name="subscription_next_renewal">次回更新</string>
+    <string name="subscription_overdue_days">%1$d日延滞</string>
+    <string name="subscription_action_menu">操作</string>
+    <string name="subscription_action_delete">削除</string>
+    
+    <!-- サイクルタイプ -->
+    <string name="subscription_cycle_monthly">月額</string>
+    <string name="subscription_cycle_quarterly">四半期</string>
+    <string name="subscription_cycle_yearly">年額</string>
+    <string name="subscription_cycle_custom">カスタム</string>
+    
+    <!-- サブスクリプション追加フォーム -->
+    <string name="subscription_add_title">サブスクリプションを追加</string>
+    <string name="subscription_edit_title">サブスクリプションを編集</string>
+    <string name="subscription_field_name">名前</string>
+    <string name="subscription_field_category">カテゴリ</string>
+    <string name="subscription_field_price">価格</string>
+    <string name="subscription_field_cycle_type">サイクルタイプ</string>
+    <string name="subscription_field_start_date">開始日</string>
+    <string name="subscription_field_reminder">リマインダー</string>
+    <string name="subscription_field_reminder_days">事前通知</string>
+    <string name="subscription_reminder_days_format">%d日前</string>
+    <string name="subscription_default_category">デジタル製品</string>
+    <string name="subscription_add_button">追加</string>
+    <string name="subscription_save_button">保存</string>
+    <string name="subscription_confirm_button">確認</string>
+    <string name="subscription_cancel_button">キャンセル</string>
+    
+    <!-- 時間単位 -->
+    <string name="subscription_per_day">/日</string>
+    <string name="subscription_per_month">/月</string>
+    
+    <!-- 削除確認 -->
+    <string name="subscription_delete_confirm_message">サブスクリプション「%1$s」を削除してもよろしいですか？この操作は元に戻せません。</string>
+    
+    <!-- 自動更新 -->
+    <string name="subscription_auto_renewal">自動更新</string>
+    <string name="subscription_auto_renewal_hint">期限切れ後に自動的に次の更新日を計算</string>
+    <string name="subscription_auto_renewal_enabled_desc">期限切れ後に自動更新されます</string>
+    <string name="subscription_auto_renewal_disabled_desc">期限切れ後に手動更新が必要です</string>
+    
+    <!-- サブスクリプション詳細 -->
+    <string name="subscription_detail_title">サブスクリプション詳細</string>
+    <string name="subscription_action_edit">編集</string>
+    <string name="subscription_statistics_title">統計情報</string>
+    <string name="subscription_accumulated_cost">累計費用</string>
+    <string name="subscription_accumulated_duration">累計期間</string>
+    <string name="subscription_average_monthly">月平均</string>
+    <string name="subscription_average_daily">日平均</string>
+    <string name="subscription_renewal_status">更新状態</string>
+    <string name="subscription_days_until_renewal">更新まで%1$d日</string>
+    <string name="subscription_info_title">サブスクリプション情報</string>
+    <string name="subscription_price">価格</string>
+    <string name="subscription_cycle_type">サイクルタイプ</string>
+    <string name="subscription_start_date">開始日</string>
+    <string name="subscription_note">メモ</string>
+    
+    <!-- 手動更新 -->
+    <string name="subscription_manual_renew">手動更新</string>
+    <string name="subscription_select_renewal_duration">更新期間を選択</string>
+    <string name="subscription_total_cost">合計費用</string>
+    <string name="subscription_new_expiration_date">新しい有効期限</string>
+    <string name="subscription_confirm_renewal">更新を確認</string>
+    <string name="subscription_expires_on">有効期限：%1$s</string>
+
 </resources>

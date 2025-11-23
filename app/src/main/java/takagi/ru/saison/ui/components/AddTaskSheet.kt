@@ -22,27 +22,30 @@ import java.time.format.DateTimeFormatter
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddTaskSheet(
+    existingTask: takagi.ru.saison.domain.model.Task? = null,
     onDismiss: () -> Unit,
     onTaskAdd: (String, LocalDateTime?, Priority, List<String>, String, Boolean, Set<java.time.DayOfWeek>) -> Unit,
     parser: NaturalLanguageParser,
     modifier: Modifier = Modifier
 ) {
-    var title by remember { mutableStateOf("") }
-    var description by remember { mutableStateOf("") }
-    var selectedPriority by remember { mutableStateOf(Priority.MEDIUM) }
-    var selectedDate by remember { mutableStateOf<LocalDateTime?>(null) }
+    val isEditMode = existingTask != null
+    
+    var title by remember { mutableStateOf(existingTask?.title ?: "") }
+    var description by remember { mutableStateOf(existingTask?.description ?: "") }
+    var selectedPriority by remember { mutableStateOf(existingTask?.priority ?: Priority.MEDIUM) }
+    var selectedDate by remember { mutableStateOf<LocalDateTime?>(existingTask?.dueDate) }
     var parsedTask by remember { mutableStateOf<ParsedTask?>(null) }
     var showDatePicker by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
     var showMoreOptions by remember { mutableStateOf(false) }
     var selectedRepeatType by remember { mutableStateOf("不重复") }
-    var reminderEnabled by remember { mutableStateOf(false) }
+    var reminderEnabled by remember { mutableStateOf(existingTask?.reminderTime != null) }
     var showCustomRepeatDialog by remember { mutableStateOf(false) }
     var selectedWeekDays by remember { mutableStateOf(setOf<java.time.DayOfWeek>()) }
     
-    // 实时解析标题输入
+    // 实时解析标题输入（仅在非编辑模式下）
     LaunchedEffect(title) {
-        if (title.isNotBlank()) {
+        if (!isEditMode && title.isNotBlank()) {
             parsedTask = parser.parse(title)
             parsedTask?.let { parsed ->
                 if (parsed.dueDate != null && selectedDate == null) {
@@ -69,7 +72,7 @@ fun AddTaskSheet(
         ) {
             // 标题
             Text(
-                text = "新建任务",
+                text = if (isEditMode) "编辑任务" else "新建任务",
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(bottom = 12.dp, top = 8.dp)
@@ -514,12 +517,12 @@ fun AddTaskSheet(
                 Button(
                     onClick = {
                         if (title.isNotBlank()) {
-                            val cleanTitle = parsedTask?.title ?: title
+                            val cleanTitle = if (isEditMode) title else (parsedTask?.title ?: title)
                             onTaskAdd(
                                 cleanTitle,
                                 selectedDate,
                                 selectedPriority,
-                                parsedTask?.tags ?: emptyList(),
+                                if (isEditMode) emptyList() else (parsedTask?.tags ?: emptyList()),
                                 selectedRepeatType,
                                 reminderEnabled,
                                 selectedWeekDays
@@ -530,12 +533,12 @@ fun AddTaskSheet(
                     enabled = title.isNotBlank()
                 ) {
                     Icon(
-                        Icons.Filled.Add,
+                        if (isEditMode) Icons.Filled.Save else Icons.Filled.Add,
                         contentDescription = null,
                         modifier = Modifier.size(20.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("添加")
+                    Text(if (isEditMode) "保存" else "添加")
                 }
             }
             } // 关闭底部按钮Column

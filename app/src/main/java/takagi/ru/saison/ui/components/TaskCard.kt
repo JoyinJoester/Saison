@@ -58,9 +58,8 @@ fun TaskCard(
     
     // 确定卡片背景色 - 确保完全不透明
     val containerColor = when {
-        task.isFavorite && !task.isCompleted -> MaterialTheme.colorScheme.primaryContainer
         isOverdue -> MaterialTheme.colorScheme.errorContainer
-        else -> MaterialTheme.colorScheme.surfaceVariant
+        else -> MaterialTheme.colorScheme.surfaceContainerHigh
     }
     
     // 确定卡片透明度

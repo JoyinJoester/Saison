@@ -22,7 +22,7 @@ import takagi.ru.saison.data.local.database.entity.CheckInRecordEntity
         SemesterEntity::class,
         SubscriptionEntity::class
     ],
-    version = 10,
+    version = 11,
     exportSchema = true
 )
 abstract class SaisonDatabase : RoomDatabase() {
@@ -214,6 +214,14 @@ abstract class SaisonDatabase : RoomDatabase() {
                         updatedAt INTEGER NOT NULL
                     )
                 """.trimIndent())
+            }
+        }
+        
+        val MIGRATION_10_11 = object : Migration(10, 11) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Add autoRenewal column to subscriptions table with default value true
+                // to maintain existing behavior for current subscriptions
+                db.execSQL("ALTER TABLE subscriptions ADD COLUMN autoRenewal INTEGER NOT NULL DEFAULT 1")
             }
         }
     }

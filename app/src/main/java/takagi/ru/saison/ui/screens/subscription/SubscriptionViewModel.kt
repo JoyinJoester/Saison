@@ -50,6 +50,67 @@ class SubscriptionViewModel @Inject constructor(
         }
     }
     
+    fun saveSubscription(
+        id: Long?,
+        name: String,
+        category: String,
+        price: Double,
+        cycleType: String,
+        cycleDuration: Int,
+        startDate: LocalDate,
+        note: String?,
+        autoRenewal: Boolean,
+        reminderEnabled: Boolean,
+        reminderDaysBefore: Int
+    ) {
+        viewModelScope.launch {
+            val startTimestamp = startDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+            val nextRenewal = calculateNextRenewalDate(startDate, cycleType, cycleDuration)
+            val nextRenewalTimestamp = nextRenewal.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+
+            if (id != null) {
+                // Update existing subscription
+                // Get the original subscription to preserve createdAt
+                val originalSubscription = subscriptions.value.find { it.id == id }
+                val entity = SubscriptionEntity(
+                    id = id,
+                    name = name,
+                    category = category,
+                    price = price,
+                    cycleType = cycleType,
+                    cycleDuration = cycleDuration,
+                    startDate = startTimestamp,
+                    nextRenewalDate = nextRenewalTimestamp,
+                    autoRenewal = autoRenewal,
+                    reminderEnabled = reminderEnabled,
+                    reminderDaysBefore = reminderDaysBefore,
+                    note = note,
+                    isActive = true,
+                    createdAt = originalSubscription?.createdAt ?: System.currentTimeMillis(),
+                    updatedAt = System.currentTimeMillis()
+                )
+                repository.updateSubscription(entity)
+            } else {
+                // Create new subscription
+                val entity = SubscriptionEntity(
+                    name = name,
+                    category = category,
+                    price = price,
+                    cycleType = cycleType,
+                    cycleDuration = cycleDuration,
+                    startDate = startTimestamp,
+                    nextRenewalDate = nextRenewalTimestamp,
+                    autoRenewal = autoRenewal,
+                    reminderEnabled = reminderEnabled,
+                    reminderDaysBefore = reminderDaysBefore,
+                    note = note,
+                    isActive = true
+                )
+                repository.insertSubscription(entity)
+            }
+        }
+    }
+    
     fun updateSubscription(subscription: SubscriptionEntity) {
         viewModelScope.launch {
             repository.updateSubscription(subscription)

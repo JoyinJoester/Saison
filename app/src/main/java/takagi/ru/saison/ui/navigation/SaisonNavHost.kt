@@ -14,11 +14,12 @@ import androidx.navigation.navArgument
 @Composable
 fun SaisonNavHost(
     navController: NavHostController,
+    startDestination: String = Screen.Tasks.route,
     modifier: Modifier = Modifier
 ) {
     NavHost(
         navController = navController,
-        startDestination = Screen.Tasks.route,
+        startDestination = startDestination,
         modifier = modifier
     ) {
         composable(Screen.Course.route) {
@@ -38,10 +39,7 @@ fun SaisonNavHost(
 
         composable(Screen.AllCourses.route) {
             takagi.ru.saison.ui.screens.course.AllCoursesScreen(
-                onNavigateBack = { navController.popBackStack() },
-                onCourseClick = { courseId ->
-                    // TODO: 导航到课程详情或编辑
-                }
+                onNavigateBack = { navController.popBackStack() }
             )
         }
 
@@ -205,6 +203,26 @@ fun SaisonNavHost(
         
         composable(Screen.Subscription.route) {
             takagi.ru.saison.ui.screens.subscription.SubscriptionScreen(
+                onNavigateBack = {
+                    if (navController.currentBackStackEntry != null) {
+                        navController.popBackStack()
+                    }
+                },
+                onNavigateToDetail = { subscriptionId ->
+                    navController.navigate(Screen.SubscriptionDetail.createRoute(subscriptionId))
+                }
+            )
+        }
+        
+        composable(
+            route = Screen.SubscriptionDetail.route,
+            arguments = listOf(
+                navArgument("subscriptionId") { type = NavType.LongType }
+            )
+        ) { backStackEntry ->
+            val subscriptionId = backStackEntry.arguments?.getLong("subscriptionId") ?: 0L
+            takagi.ru.saison.ui.screens.subscription.SubscriptionDetailScreen(
+                subscriptionId = subscriptionId,
                 onNavigateBack = {
                     if (navController.currentBackStackEntry != null) {
                         navController.popBackStack()

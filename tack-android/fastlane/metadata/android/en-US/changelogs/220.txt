@@ -1,2 +1,0 @@
-• New: French translation
-• Fixed: crash when trying to start metronome on some devices

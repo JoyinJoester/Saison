@@ -12,6 +12,14 @@
     <string name="nav_subscription">订阅列表</string>
     <string name="nav_settings">设置</string>
     
+    <!-- Navigation - Abbreviated -->
+    <string name="nav_calendar_short">日历</string>
+    <string name="nav_course_short">课程</string>
+    <string name="nav_tasks_short">任务</string>
+    <string name="nav_pomodoro_short">专注</string>
+    <string name="nav_subscription_short">订阅</string>
+    <string name="nav_settings_short">设置</string>
+    
     <!-- Common Actions -->
     <string name="action_add">添加</string>
     <string name="action_edit">编辑</string>
@@ -89,6 +97,7 @@
     
     <!-- Themes -->
     <string name="theme_dynamic">动态</string>
+    <string name="theme_auto_seasonal">Saison</string>
     <string name="theme_sakura">樱花</string>
     <string name="theme_mint">薄荷</string>
     <string name="theme_amber">琥珀</string>
@@ -205,6 +214,7 @@
     <string name="settings_webdav_test_success">✓ 连接成功</string>
     <string name="settings_webdav_test_error">✗ %s</string>
     
+    <string name="language_system">跟随系统</string>
     <string name="language_zh_cn">简体中文</string>
     <string name="language_en">English</string>
     <string name="language_ja">日本語</string>
@@ -257,6 +267,7 @@
     <!-- Course Module -->
     <string name="course_title">课程表</string>
     <string name="course_action_add">添加课程</string>
+    <string name="course_action_view_all">查看所有课程</string>
     <string name="course_week_format">第 %d 周</string>
     <string name="course_pattern_all">全部</string>
     <string name="course_pattern_a">A周</string>
@@ -266,6 +277,35 @@
     <string name="course_count_format">%d 节课</string>
     <string name="course_empty_no_courses">还没有课程</string>
     <string name="course_empty_hint">点击右下角按钮添加课程</string>
+    
+    <!-- 课程组管理 -->
+    <string name="course_group_schedule_count">%d次</string>
+    <string name="course_action_add_schedule">添加上课时间</string>
+    <string name="course_action_delete_course">删除课程</string>
+    <string name="course_schedule_item_edit">编辑</string>
+    <string name="course_schedule_item_delete">删除</string>
+    <string name="course_conflict_warning">时间冲突：与%s冲突</string>
+    <string name="course_delete_confirm_title">确认删除</string>
+    <string name="course_delete_confirm_message" formatted="false">将删除"%s"的所有%d个上课时间，此操作不可撤销。</string>
+    <string name="course_delete_last_schedule_warning">这是最后一个上课时间，删除后将删除整个课程</string>
+    <string name="course_basic_info">基本信息</string>
+    <string name="course_name">课程名称</string>
+    <string name="course_instructor">教师姓名（可选）</string>
+    <string name="course_color">课程颜色</string>
+    <string name="course_save_basic_info">保存基本信息</string>
+    <string name="course_schedules">上课时间</string>
+    <string name="course_edit_title">编辑课程</string>
+    <string name="course_add_schedule_title">添加上课时间</string>
+    <string name="course_day_of_week">星期</string>
+    <string name="course_period">节次</string>
+    <string name="course_period_start">开始节次</string>
+    <string name="course_period_end">结束节次</string>
+    <string name="course_location">教室（可选）</string>
+    <string name="course_week_pattern">周数模式</string>
+    <string name="course_info_updated">课程信息已更新</string>
+    <string name="course_deleted">课程已删除</string>
+    <string name="course_schedule_added">上课时间已添加</string>
+    <string name="course_schedule_deleted">上课时间已删除</string>
     
     <!-- Calendar Module -->
     <string name="calendar_view_month">月</string>
@@ -364,7 +404,7 @@
     <string name="duration_clear">清除</string>
     <string name="duration_format_hours">%d小时</string>
     <string name="duration_format_minutes">%d分钟</string>
-    <string name="duration_format_hours_minutes">%d小时%d分钟</string>
+    <string name="duration_format_hours_minutes" formatted="false">%d小时%d分钟</string>
     
     <!-- 任务预览 -->
     <string name="task_preview_title">任务详情</string>
@@ -554,7 +594,7 @@
     
     <!-- 课程表UI优化 -->
     <string name="period_number_format">第%d节</string>
-    <string name="time_range_format">%s-%s</string>
+    <string name="time_range_format" formatted="false">%s-%s</string>
     <string name="week_number_format">第 %1$d / %2$d 周</string>
     <string name="empty_timetable_message">本周无课程</string>
     <string name="empty_timetable_action">添加课程</string>
@@ -689,5 +729,78 @@
     <string name="courses_count">门课程</string>
     <string name="and_more_courses">还有 %d 门课程</string>
     <string name="retry">重试</string>
+
+    <!-- 订阅模块 -->
+    <string name="subscription_title">订阅列表</string>
+    <string name="subscription_more_action">更多</string>
+    <string name="subscription_add_action">添加订阅</string>
+    <string name="subscription_empty_message">暂无订阅，点击右下角添加</string>
+    
+    <!-- 订阅卡片 -->
+    <string name="subscription_accumulated_prefix">累计</string>
+    <string name="subscription_next_renewal">下次续费</string>
+    <string name="subscription_overdue_days">延期 %1$d 天</string>
+    <string name="subscription_action_menu">操作</string>
+    <string name="subscription_action_delete">删除</string>
+    
+    <!-- 周期类型 -->
+    <string name="subscription_cycle_monthly">按月订阅</string>
+    <string name="subscription_cycle_quarterly">按季订阅</string>
+    <string name="subscription_cycle_yearly">按年订阅</string>
+    <string name="subscription_cycle_custom">自定义</string>
+    
+    <!-- 添加订阅表单 -->
+    <string name="subscription_add_title">添加订阅</string>
+    <string name="subscription_edit_title">编辑订阅</string>
+    <string name="subscription_field_name">名称</string>
+    <string name="subscription_field_category">类别</string>
+    <string name="subscription_field_price">价格</string>
+    <string name="subscription_field_cycle_type">周期类型</string>
+    <string name="subscription_field_start_date">开始日期</string>
+    <string name="subscription_field_reminder">提醒</string>
+    <string name="subscription_field_reminder_days">提前提醒</string>
+    <string name="subscription_reminder_days_format">%d 天</string>
+    <string name="subscription_default_category">数字产品</string>
+    <string name="subscription_add_button">添加</string>
+    <string name="subscription_save_button">保存</string>
+    <string name="subscription_confirm_button">确定</string>
+    <string name="subscription_cancel_button">取消</string>
+    
+    <!-- 时间单位 -->
+    <string name="subscription_per_day">/日</string>
+    <string name="subscription_per_month">/月</string>
+    
+    <!-- 删除确认 -->
+    <string name="subscription_delete_confirm_message">确定要删除订阅「%1$s」吗？此操作无法撤销。</string>
+    
+    <!-- 自动续订 -->
+    <string name="subscription_auto_renewal">自动续订</string>
+    <string name="subscription_auto_renewal_hint">到期后自动计算下次续订日期</string>
+    <string name="subscription_auto_renewal_enabled_desc">到期后将自动续订</string>
+    <string name="subscription_auto_renewal_disabled_desc">到期后需要手动续订</string>
+    
+    <!-- 订阅详情 -->
+    <string name="subscription_detail_title">订阅详情</string>
+    <string name="subscription_action_edit">编辑</string>
+    <string name="subscription_statistics_title">统计信息</string>
+    <string name="subscription_accumulated_cost">累计费用</string>
+    <string name="subscription_accumulated_duration">累计时长</string>
+    <string name="subscription_average_monthly">月均费用</string>
+    <string name="subscription_average_daily">日均费用</string>
+    <string name="subscription_renewal_status">续订状态</string>
+    <string name="subscription_days_until_renewal">还有 %1$d 天到期</string>
+    <string name="subscription_info_title">订阅信息</string>
+    <string name="subscription_price">价格</string>
+    <string name="subscription_cycle_type">周期类型</string>
+    <string name="subscription_start_date">开始日期</string>
+    <string name="subscription_note">备注</string>
+    
+    <!-- 手动续订 -->
+    <string name="subscription_manual_renew">手动续订</string>
+    <string name="subscription_select_renewal_duration">选择续订时长</string>
+    <string name="subscription_total_cost">总费用</string>
+    <string name="subscription_new_expiration_date">新到期日期</string>
+    <string name="subscription_confirm_renewal">确认续订</string>
+    <string name="subscription_expires_on">到期日：%1$s</string>
 
 </resources>

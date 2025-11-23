@@ -26,4 +26,10 @@ interface SubscriptionDao {
     
     @Query("DELETE FROM subscriptions WHERE id = :id")
     suspend fun deleteSubscriptionById(id: Long)
+    
+    @Query("SELECT * FROM subscriptions WHERE autoRenewal = 0 AND nextRenewalDate < :currentTime AND isActive = 1 ORDER BY nextRenewalDate ASC")
+    fun getSubscriptionsRequiringManualRenewal(currentTime: Long): Flow<List<SubscriptionEntity>>
+    
+    @Query("UPDATE subscriptions SET nextRenewalDate = :newDate, updatedAt = :updateTime WHERE id = :id")
+    suspend fun updateRenewalDate(id: Long, newDate: Long, updateTime: Long)
 }

@@ -66,6 +66,7 @@ fun TaskListScreen(
     }
     
     Scaffold(
+        contentWindowInsets = WindowInsets(0.dp),
         topBar = {
             if (isMultiSelectMode) {
                 MultiSelectTopBar(
@@ -803,18 +804,6 @@ private fun EmptyTaskList(
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            
-            // 操作按钮 - 仅在ALL模式下显示
-            if (filterMode == TaskFilterMode.ALL) {
-                Spacer(modifier = Modifier.height(16.dp))
-                FilledTonalButton(
-                    onClick = onCreateTask
-                ) {
-                    Icon(Icons.Default.Add, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("创建任务")
-                }
-            }
         }
     }
 }

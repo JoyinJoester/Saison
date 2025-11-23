@@ -36,6 +36,24 @@ object LocaleHelper {
         
         @Suppress("DEPRECATION")
         resources.updateConfiguration(configuration, resources.displayMetrics)
+        
+        // 重新应用系统栏颜色，防止变白
+        if (activity is androidx.activity.ComponentActivity) {
+            try {
+                val window = activity.window
+                val insetsController = androidx.core.view.WindowCompat.getInsetsController(window, window.decorView)
+                
+                // 读取当前主题模式
+                val nightMode = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
+                val isDark = nightMode == Configuration.UI_MODE_NIGHT_YES
+                
+                // 重新设置系统栏图标颜色
+                insetsController.isAppearanceLightStatusBars = !isDark
+                insetsController.isAppearanceLightNavigationBars = !isDark
+            } catch (e: Exception) {
+                // 忽略错误
+            }
+        }
     }
     
     /**
@@ -43,11 +61,28 @@ object LocaleHelper {
      */
     private fun getLocaleFromCode(languageCode: String): Locale {
         return when (languageCode) {
+            "system" -> {
+                // 使用系统默认语言
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                    android.content.res.Resources.getSystem().configuration.locales[0]
+                } else {
+                    @Suppress("DEPRECATION")
+                    android.content.res.Resources.getSystem().configuration.locale
+                }
+            }
             "zh" -> Locale.SIMPLIFIED_CHINESE
             "en" -> Locale.ENGLISH
             "ja" -> Locale.JAPANESE
             "vi" -> Locale("vi")
-            else -> Locale.SIMPLIFIED_CHINESE
+            else -> {
+                // 默认使用系统语言
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                    android.content.res.Resources.getSystem().configuration.locales[0]
+                } else {
+                    @Suppress("DEPRECATION")
+                    android.content.res.Resources.getSystem().configuration.locale
+                }
+            }
         }
     }
     

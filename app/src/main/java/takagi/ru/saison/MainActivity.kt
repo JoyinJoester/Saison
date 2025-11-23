@@ -7,6 +7,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -16,6 +17,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -38,21 +40,44 @@ class MainActivity : ComponentActivity() {
     lateinit var preferencesManager: PreferencesManager
     
     override fun onCreate(savedInstanceState: Bundle?) {
+        // 安装 Splash Screen（必须在 super.onCreate 之前）
+        installSplashScreen()
+        
         super.onCreate(savedInstanceState)
+        
+        // 启用沉浸式状态栏（参考 Monica 的实现）
         enableEdgeToEdge()
         
-        // Configure edge-to-edge display
-        WindowCompat.setDecorFitsSystemWindows(window, false)
+        // 立即设置状态栏为透明，避免启动时闪白
+        window.statusBarColor = android.graphics.Color.TRANSPARENT
+        window.navigationBarColor = android.graphics.Color.TRANSPARENT
+        
+        // 根据系统夜间模式设置状态栏图标颜色
+        val isNightMode = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
+        WindowCompat.getInsetsController(window, window.decorView).apply {
+            isAppearanceLightStatusBars = !isNightMode
+            isAppearanceLightNavigationBars = !isNightMode
+        }
         
         setContent {
             SaisonAppWithTheme()
         }
     }
     
+    /**
+     * 启用沉浸式边到边显示
+     * 参考 Monica 的实现，让系统栏完全透明，由 Compose 主题自动处理颜色
+     */
+    private fun enableEdgeToEdge() {
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+    }
+    
     override fun attachBaseContext(newBase: Context) {
         // 从 SharedPreferences 读取语言设置以便初始化
         val prefs = newBase.getSharedPreferences("app_language", Context.MODE_PRIVATE)
         val languageCode = prefs.getString("language_code", "zh") ?: "zh"
+        
+        android.util.Log.d("MainActivity", "attachBaseContext: languageCode = $languageCode")
         
         val context = LocaleHelper.setLocale(newBase, languageCode)
         super.attachBaseContext(context)
@@ -62,6 +87,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun SaisonAppWithTheme() {
     // 使用 hiltViewModel 获取 ThemeViewModel
+    // 注意：这里使用的是 Activity Context，因为 attachBaseContext 已经设置了正确的 locale
     val themeViewModel = androidx.hilt.navigation.compose.hiltViewModel<takagi.ru.saison.ui.theme.ThemeViewModel>()
     val currentTheme by themeViewModel.currentTheme.collectAsState()
     val themeMode by themeViewModel.themeMode.collectAsState()
@@ -110,13 +136,18 @@ fun SaisonApp() {
         bottomNavOrder.filter { tab -> bottomNavVisibility.isVisible(tab) }
     }
     
+    // 确定起始页面：使用第一个可见的导航项
+    val startDestination = remember(visibleNavItems) {
+        visibleNavItems.firstOrNull()?.toNavItem()?.route ?: Screen.Tasks.route
+    }
+    
     Scaffold(
         contentWindowInsets = WindowInsets(0.dp),
         bottomBar = {
             NavigationBar(
-                containerColor = MaterialTheme.colorScheme.surface,
-                contentColor = MaterialTheme.colorScheme.onSurface,
-                tonalElevation = 0.dp
+                windowInsets = WindowInsets.systemBars
+                    .only(WindowInsetsSides.Bottom)
+                    .add(WindowInsets(bottom = 8.dp))
             ) {
                 visibleNavItems.forEach { tab ->
                     val navItem = tab.toNavItem()
@@ -162,6 +193,7 @@ fun SaisonApp() {
     ) { innerPadding ->
         SaisonNavHost(
             navController = navController,
+            startDestination = startDestination,
             modifier = Modifier.padding(innerPadding)
         )
     }
@@ -178,32 +210,32 @@ private data class NavItem(
 private fun BottomNavTab.toNavItem(): NavItem = when (this) {
     BottomNavTab.COURSE -> NavItem(
         icon = Icons.Default.School,
-        labelRes = R.string.nav_course,
+        labelRes = R.string.nav_course_short,
         route = Screen.Course.route
     )
     BottomNavTab.CALENDAR -> NavItem(
         icon = Icons.Default.DateRange,
-        labelRes = R.string.nav_calendar,
+        labelRes = R.string.nav_calendar_short,
         route = Screen.Calendar.route
     )
     BottomNavTab.TASKS -> NavItem(
         icon = Icons.Default.CheckCircle,
-        labelRes = R.string.nav_tasks,
+        labelRes = R.string.nav_tasks_short,
         route = Screen.Tasks.route
     )
     BottomNavTab.POMODORO -> NavItem(
         icon = Icons.Default.Timer,
-        labelRes = R.string.nav_pomodoro,
+        labelRes = R.string.nav_pomodoro_short,
         route = Screen.Pomodoro.route
     )
     BottomNavTab.SUBSCRIPTION -> NavItem(
         icon = Icons.Default.Loyalty, // Or CardMembership, or Subscriptions if available
-        labelRes = R.string.nav_subscription,
+        labelRes = R.string.nav_subscription_short,
         route = Screen.Subscription.route
     )
     BottomNavTab.SETTINGS -> NavItem(
         icon = Icons.Default.Settings,
-        labelRes = R.string.nav_settings,
+        labelRes = R.string.nav_settings_short,
         route = Screen.Settings.route
     )
 }

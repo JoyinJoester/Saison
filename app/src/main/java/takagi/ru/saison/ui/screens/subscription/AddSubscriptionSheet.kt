@@ -7,25 +7,43 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import takagi.ru.saison.R
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddSubscriptionSheet(
+    existingSubscription: takagi.ru.saison.data.local.database.entities.SubscriptionEntity? = null,
     onDismiss: () -> Unit,
-    onSave: (String, String, Double, String, Int, LocalDate, String?) -> Unit
+    onSave: (Long?, String, String, Double, String, Int, LocalDate, String?, Boolean, Boolean, Int) -> Unit
 ) {
-    var name by remember { mutableStateOf("") }
-    var category by remember { mutableStateOf("数字产品") }
-    var price by remember { mutableStateOf("") }
-    var cycleType by remember { mutableStateOf("MONTHLY") }
-    var cycleDuration by remember { mutableStateOf("1") }
-    var startDate by remember { mutableStateOf(LocalDate.now()) }
-    var note by remember { mutableStateOf("") }
+    val isEditMode = existingSubscription != null
+    val defaultCategory = stringResource(R.string.subscription_default_category)
+    
+    var name by remember { mutableStateOf(existingSubscription?.name ?: "") }
+    var category by remember { mutableStateOf(existingSubscription?.category ?: defaultCategory) }
+    var price by remember { mutableStateOf(existingSubscription?.price?.toString() ?: "") }
+    var cycleType by remember { mutableStateOf(existingSubscription?.cycleType ?: "MONTHLY") }
+    var cycleDuration by remember { mutableStateOf(existingSubscription?.cycleDuration?.toString() ?: "1") }
+    var startDate by remember { 
+        mutableStateOf(
+            existingSubscription?.let { 
+                java.time.Instant.ofEpochMilli(it.startDate)
+                    .atZone(java.time.ZoneId.systemDefault())
+                    .toLocalDate()
+            } ?: LocalDate.now()
+        ) 
+    }
+    var note by remember { mutableStateOf(existingSubscription?.note ?: "") }
+    var autoRenewal by remember { mutableStateOf(existingSubscription?.autoRenewal ?: true) }
+    var reminderEnabled by remember { mutableStateOf(existingSubscription?.reminderEnabled ?: false) }
+    var reminderDaysBefore by remember { mutableStateOf(existingSubscription?.reminderDaysBefore?.toString() ?: "1") }
     
     var showDatePicker by remember { mutableStateOf(false) }
     var showCycleTypeDropdown by remember { mutableStateOf(false) }
@@ -42,21 +60,24 @@ fun AddSubscriptionSheet(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text(
-                text = "添加订阅",
+                text = if (isEditMode) 
+                    stringResource(R.string.subscription_edit_title) 
+                else 
+                    stringResource(R.string.subscription_add_title),
                 style = MaterialTheme.typography.headlineSmall
             )
 
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
-                label = { Text("名称") },
+                label = { Text(stringResource(R.string.subscription_field_name)) },
                 modifier = Modifier.fillMaxWidth()
             )
 
             OutlinedTextField(
                 value = category,
                 onValueChange = { category = it },
-                label = { Text("类别") },
+                label = { Text(stringResource(R.string.subscription_field_category)) },
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -64,23 +85,24 @@ fun AddSubscriptionSheet(
                 OutlinedTextField(
                     value = price,
                     onValueChange = { if (it.all { char -> char.isDigit() || char == '.' }) price = it },
-                    label = { Text("价格") },
+                    label = { Text(stringResource(R.string.subscription_field_price)) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.weight(1f)
                 )
                 
                 // Cycle Type Dropdown
                 Box(modifier = Modifier.weight(1f)) {
+                    val cycleTypeDisplayText = when(cycleType) {
+                        "MONTHLY" -> stringResource(R.string.subscription_cycle_monthly)
+                        "QUARTERLY" -> stringResource(R.string.subscription_cycle_quarterly)
+                        "YEARLY" -> stringResource(R.string.subscription_cycle_yearly)
+                        else -> cycleType
+                    }
                     OutlinedTextField(
-                        value = when(cycleType) {
-                            "MONTHLY" -> "按月"
-                            "QUARTERLY" -> "按季"
-                            "YEARLY" -> "按年"
-                            else -> cycleType
-                        },
+                        value = cycleTypeDisplayText,
                         onValueChange = {},
                         readOnly = true,
-                        label = { Text("周期类型") },
+                        label = { Text(stringResource(R.string.subscription_field_cycle_type)) },
                         trailingIcon = {
                             IconButton(onClick = { showCycleTypeDropdown = true }) {
                                 Icon(Icons.Default.ArrowDropDown, contentDescription = null)
@@ -93,15 +115,15 @@ fun AddSubscriptionSheet(
                         onDismissRequest = { showCycleTypeDropdown = false }
                     ) {
                         DropdownMenuItem(
-                            text = { Text("按月") },
+                            text = { Text(stringResource(R.string.subscription_cycle_monthly)) },
                             onClick = { cycleType = "MONTHLY"; showCycleTypeDropdown = false }
                         )
                         DropdownMenuItem(
-                            text = { Text("按季") },
+                            text = { Text(stringResource(R.string.subscription_cycle_quarterly)) },
                             onClick = { cycleType = "QUARTERLY"; showCycleTypeDropdown = false }
                         )
                         DropdownMenuItem(
-                            text = { Text("按年") },
+                            text = { Text(stringResource(R.string.subscription_cycle_yearly)) },
                             onClick = { cycleType = "YEARLY"; showCycleTypeDropdown = false }
                         )
                     }
@@ -113,7 +135,7 @@ fun AddSubscriptionSheet(
                 value = startDate.format(DateTimeFormatter.ISO_LOCAL_DATE),
                 onValueChange = {},
                 readOnly = true,
-                label = { Text("开始日期") },
+                label = { Text(stringResource(R.string.subscription_field_start_date)) },
                 trailingIcon = {
                     IconButton(onClick = { showDatePicker = true }) {
                         Icon(Icons.Default.ArrowDropDown, contentDescription = null)
@@ -128,18 +150,72 @@ fun AddSubscriptionSheet(
                     disabledTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             )
+            
+            // Auto-renewal Toggle
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = stringResource(R.string.subscription_auto_renewal),
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                    Text(
+                        text = stringResource(R.string.subscription_auto_renewal_hint),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Switch(
+                    checked = autoRenewal,
+                    onCheckedChange = { autoRenewal = it }
+                )
+            }
+            
+            // Reminder Toggle
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = stringResource(R.string.subscription_field_reminder),
+                    style = MaterialTheme.typography.bodyLarge
+                )
+                Switch(
+                    checked = reminderEnabled,
+                    onCheckedChange = { reminderEnabled = it }
+                )
+            }
+            
+            // Reminder Days Before (only visible when reminder is enabled)
+            if (reminderEnabled) {
+                OutlinedTextField(
+                    value = reminderDaysBefore,
+                    onValueChange = { if (it.all { char -> char.isDigit() }) reminderDaysBefore = it },
+                    label = { Text(stringResource(R.string.subscription_field_reminder_days)) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
 
             Button(
                 onClick = {
                     val priceVal = price.toDoubleOrNull() ?: 0.0
                     val durationVal = cycleDuration.toIntOrNull() ?: 1
-                    onSave(name, category, priceVal, cycleType, durationVal, startDate, note)
+                    val reminderDaysVal = reminderDaysBefore.toIntOrNull() ?: 1
+                    onSave(existingSubscription?.id, name, category, priceVal, cycleType, durationVal, startDate, note, autoRenewal, reminderEnabled, reminderDaysVal)
                     onDismiss()
                 },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = name.isNotBlank() && price.isNotBlank()
             ) {
-                Text("保存")
+                Text(if (isEditMode) 
+                    stringResource(R.string.subscription_save_button) 
+                else 
+                    stringResource(R.string.subscription_add_button))
             }
         }
     }
@@ -157,12 +233,12 @@ fun AddSubscriptionSheet(
                     }
                     showDatePicker = false
                 }) {
-                    Text("确定")
+                    Text(stringResource(R.string.subscription_confirm_button))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDatePicker = false }) {
-                    Text("取消")
+                    Text(stringResource(R.string.subscription_cancel_button))
                 }
             }
         ) {

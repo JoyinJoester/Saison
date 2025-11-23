@@ -7,9 +7,12 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import takagi.ru.saison.data.repository.CourseRepository
 import takagi.ru.saison.domain.model.Course
+import takagi.ru.saison.domain.model.CourseGroup
 import takagi.ru.saison.domain.model.WeekPattern
+import takagi.ru.saison.domain.model.toCourseGroups
 import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.LocalTime
 import javax.inject.Inject
 
 @HiltViewModel
@@ -117,6 +120,19 @@ class CourseViewModel @Inject constructor(
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = emptyMap()
     )
+    
+    // 课程组列表（用于"查看所有课程"页面）
+    val courseGroups: StateFlow<List<CourseGroup>> = allCourses.map { courses ->
+        courses.toCourseGroups()
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
+    
+    // 选中的课程组
+    private val _selectedCourseGroup = MutableStateFlow<CourseGroup?>(null)
+    val selectedCourseGroup: StateFlow<CourseGroup?> = _selectedCourseGroup.asStateFlow()
     
     init {
         _uiState.value = CourseUiState.Success
@@ -565,6 +581,116 @@ class CourseViewModel @Inject constructor(
             // 检测时间段是否重叠
             !(periodEnd < start || periodStart > end)
         } ?: emptyList()
+    }
+    
+    // ========== 课程组管理功能 ==========
+    
+    /**
+     * 选择课程组
+     */
+    fun selectCourseGroup(courseName: String) {
+        _selectedCourseGroup.value = courseGroups.value.find { it.courseName == courseName }
+    }
+    
+    /**
+     * 清除选中的课程组
+     */
+    fun clearSelectedCourseGroup() {
+        _selectedCourseGroup.value = null
+    }
+    
+    /**
+     * 更新课程组的基本信息（会同步更新该课程名称下的所有课程实例）
+     */
+    fun updateCourseGroupInfo(
+        oldName: String,
+        newName: String,
+        instructor: String?,
+        color: Int
+    ) {
+        viewModelScope.launch {
+            try {
+                val courses = allCourses.value.filter { it.name == oldName }
+                courses.forEach { course ->
+                    updateCourse(course.copy(
+                        name = newName,
+                        instructor = instructor,
+                        color = color,
+                        updatedAt = System.currentTimeMillis()
+                    ))
+                }
+                // 更新选中的课程组
+                if (_selectedCourseGroup.value?.courseName == oldName) {
+                    selectCourseGroup(newName)
+                }
+            } catch (e: Exception) {
+                _uiState.value = CourseUiState.Error(e.message ?: "更新课程信息失败")
+            }
+        }
+    }
+    
+    /**
+     * 删除整个课程组（删除该课程名称下的所有课程实例）
+     */
+    fun deleteCourseGroup(courseName: String) {
+        viewModelScope.launch {
+            try {
+                val courses = allCourses.value.filter { it.name == courseName }
+                courses.forEach { course ->
+                    deleteCourse(course.id)
+                }
+                clearSelectedCourseGroup()
+            } catch (e: Exception) {
+                _uiState.value = CourseUiState.Error(e.message ?: "删除课程失败")
+            }
+        }
+    }
+    
+    /**
+     * 添加新的上课时间到课程组
+     */
+    fun addScheduleToCourseGroup(
+        courseName: String,
+        dayOfWeek: DayOfWeek,
+        periodStart: Int,
+        periodEnd: Int,
+        location: String?,
+        weekPattern: WeekPattern,
+        customWeeks: List<Int>?
+    ) {
+        viewModelScope.launch {
+            try {
+                // 获取该课程组的第一个课程作为模板
+                val template = allCourses.value.find { it.name == courseName }
+                if (template != null) {
+                    // 计算开始和结束时间
+                    val startPeriod = getPeriodByNumber(periodStart)
+                    val endPeriod = getPeriodByNumber(periodEnd)
+                    
+                    if (startPeriod != null && endPeriod != null) {
+                        val newCourse = template.copy(
+                            id = 0, // 新课程
+                            dayOfWeek = dayOfWeek,
+                            periodStart = periodStart,
+                            periodEnd = periodEnd,
+                            startTime = startPeriod.startTime,
+                            endTime = endPeriod.endTime,
+                            location = location,
+                            weekPattern = weekPattern,
+                            customWeeks = customWeeks,
+                            isCustomTime = false,
+                            createdAt = System.currentTimeMillis(),
+                            updatedAt = System.currentTimeMillis()
+                        )
+                        addCourse(newCourse)
+                        // 刷新选中的课程组
+                        selectCourseGroup(courseName)
+                    }
+                }
+            } catch (e: Exception) {
+                _uiState.value = CourseUiState.Error(e.message ?: "添加上课时间失败")
+            }
+        }
     }
 }
 
