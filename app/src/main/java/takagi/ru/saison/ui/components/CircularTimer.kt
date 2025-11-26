@@ -1,18 +1,15 @@
 package takagi.ru.saison.ui.components
 
 import androidx.compose.animation.core.*
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.*
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
@@ -29,72 +26,43 @@ fun CircularTimer(
     isCompleted: Boolean = false,
     modifier: Modifier = Modifier,
     size: Dp = 280.dp,
-    strokeWidth: Dp = 16.dp
+    strokeWidth: Dp = 20.dp
 ) {
-    val backgroundColor = MaterialTheme.colorScheme.surfaceVariant
     val progressColor = when {
         isCompleted -> MaterialTheme.colorScheme.secondary
         isPaused -> MaterialTheme.colorScheme.tertiary
         else -> MaterialTheme.colorScheme.primary
     }
+    
+    val trackColor = MaterialTheme.colorScheme.surfaceVariant
+    
+    // 计算已经过去的时间比例（深色部分）
     val progress = if (totalSeconds > 0) {
-        remainingSeconds.toFloat() / totalSeconds.toFloat()
+        (totalSeconds - remainingSeconds).toFloat() / totalSeconds.toFloat()
     } else {
         0f
     }
     
-    // 脉冲动画
-    val infiniteTransition = rememberInfiniteTransition(label = "pulse")
-    val pulseScale by infiniteTransition.animateFloat(
-        initialValue = 1f,
-        targetValue = if (isRunning) 1.05f else 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1000, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "pulse"
+    // 使用 Material 3 推荐的动画规格
+    val animatedProgress by animateFloatAsState(
+        targetValue = progress,
+        animationSpec = ProgressIndicatorDefaults.ProgressAnimationSpec,
+        label = "progress"
     )
     
     Box(
         modifier = modifier.size(size),
         contentAlignment = Alignment.Center
     ) {
-        // 圆形进度条
-        Canvas(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(strokeWidth / 2)
-        ) {
-            val canvasSize = this.size
-            val radius = (canvasSize.minDimension - strokeWidth.toPx()) / 2
-            val center = Offset(canvasSize.width / 2, canvasSize.height / 2)
-            
-            // 背景圆环
-            drawCircle(
-                color = backgroundColor,
-                radius = radius,
-                center = center,
-                style = Stroke(width = strokeWidth.toPx())
-            )
-            
-            // 进度圆弧
-            val sweepAngle = 360f * progress
-            drawArc(
-                color = progressColor,
-                startAngle = -90f,
-                sweepAngle = sweepAngle,
-                useCenter = false,
-                topLeft = Offset(
-                    center.x - radius,
-                    center.y - radius
-                ),
-                size = Size(radius * 2, radius * 2),
-                style = Stroke(
-                    width = strokeWidth.toPx() * if (isRunning) pulseScale else 1f,
-                    cap = StrokeCap.Round
-                )
-            )
-        }
+        // 使用 Material 3 官方的 CircularProgressIndicator
+        CircularProgressIndicator(
+            progress = { animatedProgress },
+            modifier = Modifier.size(size),
+            color = progressColor,
+            strokeWidth = strokeWidth,
+            trackColor = trackColor,
+            strokeCap = StrokeCap.Round,
+        )
         
         // 时间显示
         Column(
@@ -112,12 +80,14 @@ fun CircularTimer(
             Spacer(modifier = Modifier.height(8.dp))
             
             Text(
-                text = stringResource(when {
-                    isCompleted -> R.string.pomodoro_status_completed
-                    isRunning -> R.string.pomodoro_status_focusing
-                    isPaused -> R.string.pomodoro_status_paused
-                    else -> R.string.pomodoro_status_ready
-                }),
+                text = stringResource(
+                    when {
+                        isCompleted -> R.string.pomodoro_status_completed
+                        isRunning -> R.string.pomodoro_status_focusing
+                        isPaused -> R.string.pomodoro_status_paused
+                        else -> R.string.pomodoro_status_ready
+                    }
+                ),
                 style = MaterialTheme.typography.titleMedium,
                 color = when {
                     isCompleted -> MaterialTheme.colorScheme.secondary

@@ -131,11 +131,14 @@ class ImportCourseDataUseCase @Inject constructor(
         options: ImportOptions
     ): Result<ImportResult> = withContext(Dispatchers.IO) {
         try {
+            android.util.Log.d(TAG, "Starting import: semester=${data.semesterInfo.name}, courses=${data.courses.size}")
+            
             // 创建学期
             val semester = data.semesterInfo.toSemester().copy(
                 name = options.semesterName
             )
             val semesterId = semesterRepository.insertSemester(semester)
+            android.util.Log.d(TAG, "Semester created: id=$semesterId")
             
             // 应用节次设置（如果用户选择）
             if (options.applyPeriodSettings) {
@@ -161,6 +164,21 @@ class ImportCourseDataUseCase @Inject constructor(
             }
             courseRepository.insertCourses(courses)
             
+            // 设置新导入的学期为当前活动学期
+            try {
+                preferencesManager.setCurrentSemesterId(semesterId)
+                android.util.Log.d(TAG, "Set active semester: $semesterId")
+                
+                // 添加到学期历史记录
+                preferencesManager.addToSemesterHistory(semesterId)
+                android.util.Log.d(TAG, "Added to semester history: $semesterId")
+            } catch (e: Exception) {
+                // 即使设置活动学期失败，也不影响导入结果（数据已保存）
+                android.util.Log.e(TAG, "Failed to set active semester, but import succeeded", e)
+            }
+            
+            android.util.Log.d(TAG, "Import completed successfully: ${courses.size} courses imported")
+            
             Result.success(
                 ImportResult(
                     semesterId = semesterId,
@@ -169,8 +187,13 @@ class ImportCourseDataUseCase @Inject constructor(
                 )
             )
         } catch (e: Exception) {
+            android.util.Log.e(TAG, "Import failed", e)
             Result.failure(Exception("导入失败：${e.message}"))
         }
+    }
+    
+    companion object {
+        private const val TAG = "ImportCourseDataUseCase"
     }
 }
 

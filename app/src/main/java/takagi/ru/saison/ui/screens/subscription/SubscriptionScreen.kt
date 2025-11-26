@@ -119,7 +119,10 @@ fun SubscriptionScreen(
                     .padding(paddingValues)
                     .padding(horizontal = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
-                contentPadding = PaddingValues(bottom = 80.dp) // Space for FAB
+                contentPadding = PaddingValues(
+                    top = 8.dp,
+                    bottom = 88.dp // 为浮动按钮留出空间
+                )
             ) {
                 items(subscriptions) { subscription ->
                     val stats = viewModel.calculateStats(subscription)

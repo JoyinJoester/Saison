@@ -53,6 +53,12 @@ fun SaisonNavHost(
                 },
                 onEventClick = { eventId ->
                     navController.navigate(Screen.EventDetail.createRoute(eventId))
+                },
+                onRoutineClick = { routineId ->
+                    navController.navigate(Screen.RoutineDetail.createRoute(routineId))
+                },
+                onSubscriptionClick = { subscriptionId ->
+                    navController.navigate(Screen.SubscriptionDetail.createRoute(subscriptionId))
                 }
             )
         }

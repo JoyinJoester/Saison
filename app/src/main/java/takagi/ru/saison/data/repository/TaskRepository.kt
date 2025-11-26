@@ -15,8 +15,17 @@ import javax.inject.Singleton
 class TaskRepository @Inject constructor(
     private val taskDao: TaskDao,
     private val tagDao: TagDao,
-    private val encryptionManager: EncryptionManager
+    private val encryptionManager: EncryptionManager,
+    @javax.inject.Named("applicationContext") private val context: android.content.Context
 ) {
+    
+    // Lazy inject to avoid circular dependency
+    private val widgetUpdateCoordinator: takagi.ru.saison.ui.widget.WidgetUpdateCoordinator by lazy {
+        dagger.hilt.android.EntryPointAccessors.fromApplication(
+            context,
+            takagi.ru.saison.ui.widget.WidgetEntryPoints.UpdateCoordinator::class.java
+        ).widgetUpdateCoordinator()
+    }
     
     fun getAllTasks(): Flow<List<Task>> {
         return taskDao.getAllTasksFlow().map { entities ->
@@ -83,22 +92,56 @@ class TaskRepository @Inject constructor(
         // Get or create default category
         val categoryId = task.category?.id ?: getOrCreateDefaultCategory()
         val entity = task.toEntity(categoryId)
-        return taskDao.insert(entity)
+        val result = taskDao.insert(entity)
+        
+        // Trigger widget update
+        try {
+            widgetUpdateCoordinator.onTaskChanged(context)
+            android.util.Log.d("TaskRepository", "Widget update triggered after task insert")
+        } catch (e: Exception) {
+            android.util.Log.e("TaskRepository", "Failed to trigger widget update", e)
+        }
+        
+        return result
     }
     
     suspend fun updateTask(task: Task) {
         val categoryId = task.category?.id ?: getOrCreateDefaultCategory()
         val entity = task.toEntity(categoryId)
         taskDao.update(entity)
+        
+        // Trigger widget update
+        try {
+            widgetUpdateCoordinator.onTaskChanged(context)
+            android.util.Log.d("TaskRepository", "Widget update triggered after task update")
+        } catch (e: Exception) {
+            android.util.Log.e("TaskRepository", "Failed to trigger widget update", e)
+        }
     }
     
     suspend fun deleteTask(taskId: Long) {
         taskDao.deleteById(taskId)
+        
+        // Trigger widget update
+        try {
+            widgetUpdateCoordinator.onTaskChanged(context)
+            android.util.Log.d("TaskRepository", "Widget update triggered after task delete")
+        } catch (e: Exception) {
+            android.util.Log.e("TaskRepository", "Failed to trigger widget update", e)
+        }
     }
     
     suspend fun toggleTaskCompletion(taskId: Long, isCompleted: Boolean) {
         val completedAt = if (isCompleted) System.currentTimeMillis() else null
         taskDao.updateCompletionStatus(taskId, isCompleted, completedAt)
+        
+        // Trigger widget update
+        try {
+            widgetUpdateCoordinator.onTaskChanged(context)
+            android.util.Log.d("TaskRepository", "Widget update triggered after task completion toggle")
+        } catch (e: Exception) {
+            android.util.Log.e("TaskRepository", "Failed to trigger widget update", e)
+        }
     }
     
     suspend fun deleteCompletedTasksOlderThan(days: Int) {
@@ -131,3 +174,5 @@ class TaskRepository @Inject constructor(
         return tagDao.insert(newTag)
     }
 }
+
+// WidgetUpdateCoordinatorEntryPoint moved to WidgetEntryPoints.kt for centralized management

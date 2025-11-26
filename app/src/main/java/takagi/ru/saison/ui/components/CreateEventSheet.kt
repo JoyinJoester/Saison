@@ -111,7 +111,12 @@ fun CreateEventSheet(
                         FilterChip(
                             selected = selectedCategory == category,
                             onClick = { selectedCategory = category },
-                            label = { Text(stringResource(category.getDisplayNameResId())) },
+                            label = { 
+                                Text(
+                                    stringResource(category.getDisplayNameResId()),
+                                    modifier = Modifier.padding(horizontal = 2.dp)
+                                ) 
+                            },
                             leadingIcon = {
                                 Icon(
                                     imageVector = category.getIcon(),
@@ -119,7 +124,7 @@ fun CreateEventSheet(
                                     modifier = Modifier.size(18.dp)
                                 )
                             },
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f).heightIn(min = 40.dp)
                         )
                     }
                 }

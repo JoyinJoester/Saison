@@ -9,12 +9,15 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import takagi.ru.saison.R
 import takagi.ru.saison.ui.screens.pomodoro.PomodoroSettings
+import takagi.ru.saison.domain.model.routine.RoutineTask
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PomodoroSettingsSheet(
     settings: PomodoroSettings,
+    selectedTask: RoutineTask? = null,
     onSettingsChange: (PomodoroSettings) -> Unit,
+    onTaskDurationChange: ((Int) -> Unit)? = null,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -33,9 +36,52 @@ fun PomodoroSettingsSheet(
         ) {
             // 标题
             Text(
-                text = stringResource(R.string.pomodoro_settings_dialog_title),
+                text = if (selectedTask != null) {
+                    stringResource(R.string.pomodoro_task_settings_title)
+                } else {
+                    stringResource(R.string.pomodoro_settings_dialog_title)
+                },
                 style = MaterialTheme.typography.titleLarge
             )
+            
+            // 任务信息展示(如果有选中任务)
+            if (selectedTask != null) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer
+                    )
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = selectedTask.title,
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+                        
+                        if (selectedTask.durationMinutes != null && onTaskDurationChange != null) {
+                            var taskDuration by remember { mutableStateOf(selectedTask.durationMinutes.toString()) }
+                            
+                            OutlinedTextField(
+                                value = taskDuration,
+                                onValueChange = { taskDuration = it },
+                                label = { Text(stringResource(R.string.pomodoro_task_duration_label)) },
+                                suffix = { Text(stringResource(R.string.common_unit_minutes)) },
+                                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                                    keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
+                                ),
+                                modifier = Modifier.fillMaxWidth(),
+                                singleLine = true
+                            )
+                        }
+                    }
+                }
+                
+                Divider()
+            }
             
             // 工作时长
             SettingSlider(
@@ -44,24 +90,6 @@ fun PomodoroSettingsSheet(
                 valueRange = 15f..60f,
                 steps = 8,
                 onValueChange = { tempSettings = tempSettings.copy(workDuration = it.toInt()) }
-            )
-            
-            // 短休息时长
-            SettingSlider(
-                label = stringResource(R.string.pomodoro_short_break_label),
-                value = tempSettings.shortBreakDuration,
-                valueRange = 3f..15f,
-                steps = 11,
-                onValueChange = { tempSettings = tempSettings.copy(shortBreakDuration = it.toInt()) }
-            )
-            
-            // 长休息时长
-            SettingSlider(
-                label = stringResource(R.string.pomodoro_long_break_label),
-                value = tempSettings.longBreakDuration,
-                valueRange = 10f..30f,
-                steps = 19,
-                onValueChange = { tempSettings = tempSettings.copy(longBreakDuration = it.toInt()) }
             )
             
             Divider()

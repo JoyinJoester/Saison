@@ -43,9 +43,22 @@ class CycleCalculator {
                 config.daysOfMonth.contains(currentDayOfMonth)
             }
             CycleType.CUSTOM -> {
-                // 自定义任务：使用 RRULE 规则（暂时返回 false，需要 RRULE 解析库）
-                // TODO: 实现 RRULE 解析
-                false
+                // 自定义任务：解析简单的 RRULE（FREQ=DAILY;INTERVAL=X）
+                val config = task.cycleConfig as? CycleConfig.Custom ?: return false
+                val rrule = config.rrule
+                
+                // 解析间隔天数
+                val intervalMatch = Regex("INTERVAL=(\\d+)").find(rrule)
+                val interval = intervalMatch?.groupValues?.get(1)?.toIntOrNull() ?: return false
+                
+                // 计算从任务创建日期到指定日期的天数差
+                val daysSinceCreation = java.time.temporal.ChronoUnit.DAYS.between(
+                    task.createdAt.toLocalDate(),
+                    date
+                )
+                
+                // 检查是否是间隔的倍数
+                daysSinceCreation >= 0 && daysSinceCreation % interval == 0L
             }
         }
     }
@@ -80,9 +93,8 @@ class CycleCalculator {
                 Pair(firstDay, lastDay)
             }
             CycleType.CUSTOM -> {
-                // 自定义任务：根据 RRULE 规则计算
-                // TODO: 实现 RRULE 解析
-                null
+                // 自定义任务：根据间隔天数计算周期（当天）
+                Pair(date, date)
             }
         }
     }
@@ -159,9 +171,25 @@ class CycleCalculator {
                 }
             }
             CycleType.CUSTOM -> {
-                // 自定义任务：根据 RRULE 规则计算
-                // TODO: 实现 RRULE 解析
-                null
+                // 自定义任务：根据间隔天数计算下一个活跃日期
+                val config = task.cycleConfig as? CycleConfig.Custom ?: return null
+                val rrule = config.rrule
+                
+                // 解析间隔天数
+                val intervalMatch = Regex("INTERVAL=(\\d+)").find(rrule)
+                val interval = intervalMatch?.groupValues?.get(1)?.toIntOrNull() ?: return null
+                
+                // 计算从创建日期到当前日期的天数差
+                val daysSinceCreation = java.time.temporal.ChronoUnit.DAYS.between(
+                    task.createdAt.toLocalDate(),
+                    fromDate
+                )
+                
+                // 计算下一个活跃日期
+                val remainder = daysSinceCreation % interval
+                val daysToNext = if (remainder == 0L) 0 else interval - remainder.toInt()
+                
+                fromDate.plusDays(daysToNext.toLong())
             }
         }
     }
@@ -202,7 +230,21 @@ class CycleCalculator {
                     "每月$days"
                 }
             }
-            CycleType.CUSTOM -> "自定义周期"
+            CycleType.CUSTOM -> {
+                val config = task.cycleConfig as? CycleConfig.Custom
+                if (config == null) {
+                    "自定义周期"
+                } else {
+                    // 解析间隔天数
+                    val intervalMatch = Regex("INTERVAL=(\\d+)").find(config.rrule)
+                    val interval = intervalMatch?.groupValues?.get(1)?.toIntOrNull()
+                    if (interval != null) {
+                        "每${interval}天"
+                    } else {
+                        "自定义周期"
+                    }
+                }
+            }
         }
     }
 }

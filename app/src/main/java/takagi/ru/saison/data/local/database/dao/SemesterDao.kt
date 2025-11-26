@@ -51,4 +51,11 @@ interface SemesterDao {
     
     @Query("SELECT COUNT(*) FROM semesters WHERE isArchived = 0")
     fun getActiveSemesterCount(): Flow<Int>
+    
+    /**
+     * 检查是否存在任何学期
+     * Requirements: 3.1
+     */
+    @Query("SELECT EXISTS(SELECT 1 FROM semesters LIMIT 1)")
+    suspend fun hasSemesters(): Boolean
 }

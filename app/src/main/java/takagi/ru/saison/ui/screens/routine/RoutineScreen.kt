@@ -147,7 +147,12 @@ fun RoutineScreen(
                     // 任务列表
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(16.dp),
+                        contentPadding = PaddingValues(
+                            start = 16.dp,
+                            end = 16.dp,
+                            top = 16.dp,
+                            bottom = 88.dp // 为浮动按钮留出空间
+                        ),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         // 活跃任务

@@ -30,6 +30,9 @@
     <string name="action_filter">筛选</string>
     <string name="action_sync">同步</string>
     
+    <!-- Common Units -->
+    <string name="common_unit_minutes">分钟</string>
+    
     <!-- Task -->
     <string name="task_title">标题</string>
     <string name="task_description">描述</string>
@@ -48,6 +51,14 @@
     
     <!-- Calendar -->
     <string name="calendar_month">月</string>
+    
+    <string name="widget_today">今天</string>
+    <string name="widget_tomorrow">明天</string>
+    <string name="widget_no_courses">今日无课</string>
+    <string name="widget_no_semester">请先创建学期</string>
+    <string name="widget_description">显示今天和明天的课程</string>
+    <string name="widget_date_format">%1$d.%2$d 第%3$d周 %4$s</string>
+    <string name="single_day_widget_description">显示单日课程，支持左右切换</string>
     <string name="calendar_week">周</string>
     <string name="calendar_day">日</string>
     <string name="calendar_list">列表</string>
@@ -481,6 +492,10 @@
     <string name="pomodoro_message_checkin_failed">打卡失败：%s</string>
     <string name="pomodoro_message_auto_checkin_success">已自动打卡</string>
     <string name="pomodoro_message_auto_checkin_failed">自动打卡失败：%s</string>
+    <string name="pomodoro_completed_sessions">已完成 %d 个</string>
+    <string name="pomodoro_total_sessions">共 %d 个</string>
+    <string name="pomodoro_task_settings_title">任务设置</string>
+    <string name="pomodoro_task_duration_label">任务时长</string>
     
     <!-- 周数选择器 -->
     <string name="week_selector_title">选择周数</string>
@@ -803,4 +818,12 @@
     <string name="subscription_confirm_renewal">确认续订</string>
     <string name="subscription_expires_on">到期日：%1$s</string>
 
+    <!-- Task Widget -->
+    <string name="task_widget_description">查看和管理您的任务</string>
+    <string name="task_widget_pending_tasks">待办任务</string>
+    <string name="task_widget_completed_today">今日完成</string>
+    <string name="task_widget_incomplete">待完成</string>
+    <string name="task_widget_in_progress">进行中</string>
+    <string name="task_widget_no_tasks">还没有任务</string>
+    <string name="task_widget_add">添加</string>
 </resources>

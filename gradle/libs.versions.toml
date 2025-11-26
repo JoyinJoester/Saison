@@ -36,6 +36,9 @@ kotlinxSerialization = "1.6.3"
 # WorkManager
 workManager = "2.9.1"
 
+# Glance (App Widgets)
+glance = "1.1.0"
+
 # Security Crypto
 securityCrypto = "1.1.0-alpha06"
 
@@ -112,6 +115,10 @@ kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-
 
 # WorkManager
 work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "workManager" }
+
+# Glance (App Widgets)
+glance-appwidget = { group = "androidx.glance", name = "glance-appwidget", version.ref = "glance" }
+glance-material3 = { group = "androidx.glance", name = "glance-material3", version.ref = "glance" }
 
 # Security
 security-crypto = { group = "androidx.security", name = "security-crypto", version.ref = "securityCrypto" }

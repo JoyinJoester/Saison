@@ -1,11 +1,13 @@
 package takagi.ru.saison.ui.components
 
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.Slider
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -43,6 +45,17 @@ fun CreateRoutineSheet(
             when (val config = task?.cycleConfig) {
                 is CycleConfig.Monthly -> config.daysOfMonth.toSet()
                 else -> emptySet()
+            }
+        )
+    }
+    var customIntervalDays by remember { 
+        mutableStateOf(
+            when (val config = task?.cycleConfig) {
+                is CycleConfig.Custom -> {
+                    // 从RRULE解析间隔天数，格式: "FREQ=DAILY;INTERVAL=X"
+                    config.rrule.substringAfter("INTERVAL=", "2").toIntOrNull() ?: 2
+                }
+                else -> 2
             }
         )
     }
@@ -193,7 +206,9 @@ fun CreateRoutineSheet(
             )
             
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 CycleType.values().forEach { type ->
@@ -209,8 +224,7 @@ fun CreateRoutineSheet(
                                     CycleType.CUSTOM -> "自定义"
                                 }
                             )
-                        },
-                        modifier = Modifier.weight(1f)
+                        }
                     )
                 }
             }
@@ -302,18 +316,103 @@ fun CreateRoutineSheet(
                 }
             }
             
-            // 自定义周期提示
+            // 自定义周期配置
             if (cycleType == CycleType.CUSTOM) {
-                Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer
-                    )
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Text(
-                        text = "自定义周期功能即将推出",
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.padding(16.dp)
+                        text = "间隔天数",
+                        style = MaterialTheme.typography.titleSmall
                     )
+                    
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+                        )
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Text(
+                                text = "每 $customIntervalDays 天重复一次",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                // 减少按钮
+                                FilledTonalIconButton(
+                                    onClick = { 
+                                        if (customIntervalDays > 2) {
+                                            customIntervalDays--
+                                        }
+                                    },
+                                    enabled = customIntervalDays > 2
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Remove,
+                                        contentDescription = "减少"
+                                    )
+                                }
+                                
+                                // 滑块
+                                Slider(
+                                    value = customIntervalDays.toFloat(),
+                                    onValueChange = { customIntervalDays = it.toInt() },
+                                    valueRange = 2f..30f,
+                                    steps = 27,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                
+                                // 增加按钮
+                                FilledTonalIconButton(
+                                    onClick = { 
+                                        if (customIntervalDays < 30) {
+                                            customIntervalDays++
+                                        }
+                                    },
+                                    enabled = customIntervalDays < 30
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Add,
+                                        contentDescription = "增加"
+                                    )
+                                }
+                            }
+                            
+                            // 快捷选择按钮
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .horizontalScroll(rememberScrollState()),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                listOf(2, 3, 5, 7, 10, 14, 21, 30).forEach { days ->
+                                    FilterChip(
+                                        selected = customIntervalDays == days,
+                                        onClick = { customIntervalDays = days },
+                                        label = { Text("${days}天") }
+                                    )
+                                }
+                            }
+                            
+                            // 说明文字
+                            Text(
+                                text = "例如：选择2天表示每隔一天重复，选择7天表示每周重复",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
                 }
             }
             
@@ -350,7 +449,7 @@ fun CreateRoutineSheet(
                             CycleType.DAILY -> CycleConfig.Daily()
                             CycleType.WEEKLY -> CycleConfig.Weekly(selectedDaysOfWeek.toList())
                             CycleType.MONTHLY -> CycleConfig.Monthly(selectedDaysOfMonth.sorted())
-                            CycleType.CUSTOM -> CycleConfig.Custom("")
+                            CycleType.CUSTOM -> CycleConfig.Custom("FREQ=DAILY;INTERVAL=$customIntervalDays")
                         }
                         
                         val now = LocalDateTime.now()

@@ -1,9 +1,11 @@
 package takagi.ru.saison.ui.screens.event
 
 import androidx.compose.animation.*
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -19,7 +21,7 @@ import takagi.ru.saison.domain.model.EventCategory
 import takagi.ru.saison.ui.components.CreateEventSheet
 import takagi.ru.saison.ui.components.EventCard
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun EventScreen(
     viewModel: EventViewModel = hiltViewModel(),
@@ -208,6 +210,7 @@ private fun CategoryFilterRow(
     Row(
         modifier = modifier
             .fillMaxWidth()
+            .horizontalScroll(rememberScrollState())
             .padding(horizontal = 16.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
@@ -215,7 +218,12 @@ private fun CategoryFilterRow(
         FilterChip(
             selected = selectedCategory == null,
             onClick = { onCategoryChange(null) },
-            label = { Text(stringResource(R.string.event_category_all)) }
+            label = { 
+                Text(
+                    stringResource(R.string.event_category_all),
+                    maxLines = 1
+                ) 
+            }
         )
         
         // 各个类别
@@ -223,7 +231,12 @@ private fun CategoryFilterRow(
             FilterChip(
                 selected = selectedCategory == category,
                 onClick = { onCategoryChange(category) },
-                label = { Text(stringResource(category.getDisplayNameResId())) },
+                label = { 
+                    Text(
+                        stringResource(category.getDisplayNameResId()),
+                        maxLines = 1
+                    ) 
+                },
                 leadingIcon = {
                     Icon(
                         imageVector = category.getIcon(),
@@ -244,7 +257,10 @@ private fun EventList(
 ) {
     LazyColumn(
         modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(vertical = 8.dp)
+        contentPadding = PaddingValues(
+            top = 8.dp,
+            bottom = 88.dp // 为浮动按钮留出空间
+        )
     ) {
         items(
             items = events,

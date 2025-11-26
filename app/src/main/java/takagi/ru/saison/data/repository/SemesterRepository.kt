@@ -18,4 +18,18 @@ interface SemesterRepository {
     suspend fun getSemesterCount(): Int
     fun getActiveSemesterCount(): Flow<Int>
     suspend fun copySemester(semesterId: Long, newName: String): Long
+    
+    /**
+     * 创建一个默认学期
+     * Requirements: 1.2, 1.3, 1.4, 1.5
+     * @return 新创建学期的ID
+     */
+    suspend fun createDefaultSemester(): Long
+    
+    /**
+     * 检查是否存在任何学期
+     * Requirements: 1.2
+     * @return true如果至少有一个学期
+     */
+    suspend fun hasSemesters(): Boolean
 }

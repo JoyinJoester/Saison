@@ -6,11 +6,17 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import takagi.ru.saison.data.repository.CourseSettingsRepositoryImpl
+import takagi.ru.saison.data.repository.CourseWidgetRepository
+import takagi.ru.saison.data.repository.CourseWidgetRepositoryImpl
+import takagi.ru.saison.data.repository.DefaultSemesterInitializer
+import takagi.ru.saison.data.repository.DefaultSemesterInitializerImpl
 import takagi.ru.saison.data.repository.EventRepositoryImpl
 import takagi.ru.saison.data.repository.RoutineRepository
 import takagi.ru.saison.data.repository.RoutineRepositoryImpl
 import takagi.ru.saison.data.repository.SemesterRepository
 import takagi.ru.saison.data.repository.SemesterRepositoryImpl
+import takagi.ru.saison.data.repository.TaskWidgetRepository
+import takagi.ru.saison.data.repository.TaskWidgetRepositoryImpl
 import takagi.ru.saison.domain.repository.CourseSettingsRepository
 import takagi.ru.saison.domain.repository.EventRepository
 import takagi.ru.saison.util.CycleCalculator
@@ -44,11 +50,38 @@ abstract class RepositoryModule {
         semesterRepositoryImpl: SemesterRepositoryImpl
     ): SemesterRepository
     
+    @Binds
+    @Singleton
+    abstract fun bindCourseWidgetRepository(
+        courseWidgetRepositoryImpl: CourseWidgetRepositoryImpl
+    ): CourseWidgetRepository
+    
+    @Binds
+    @Singleton
+    abstract fun bindDefaultSemesterInitializer(
+        defaultSemesterInitializerImpl: DefaultSemesterInitializerImpl
+    ): DefaultSemesterInitializer
+    
+    @Binds
+    @Singleton
+    abstract fun bindTaskWidgetRepository(
+        taskWidgetRepositoryImpl: TaskWidgetRepositoryImpl
+    ): TaskWidgetRepository
+    
     companion object {
         @Provides
         @Singleton
         fun provideCycleCalculator(): CycleCalculator {
             return CycleCalculator()
+        }
+        
+        @Provides
+        @Singleton
+        @javax.inject.Named("applicationContext")
+        fun provideApplicationContext(
+            @dagger.hilt.android.qualifiers.ApplicationContext context: android.content.Context
+        ): android.content.Context {
+            return context
         }
     }
 }

@@ -30,6 +30,9 @@
     <string name="action_filter">Filter</string>
     <string name="action_sync">Sync</string>
     
+    <!-- Common Units -->
+    <string name="common_unit_minutes">minutes</string>
+    
     <!-- Task -->
     <string name="task_title">Title</string>
     <string name="task_description">Description</string>
@@ -48,6 +51,14 @@
     
     <!-- Calendar -->
     <string name="calendar_month">Month</string>
+    
+    <string name="widget_today">Today</string>
+    <string name="widget_tomorrow">Tomorrow</string>
+    <string name="widget_no_courses">No classes</string>
+    <string name="widget_no_semester">Please create a semester first</string>
+    <string name="widget_description">Display today and tomorrow\'s courses</string>
+    <string name="widget_date_format">%1$d.%2$d Week %3$d %4$s</string>
+    <string name="single_day_widget_description">Display single day courses with navigation</string>
     <string name="calendar_week">Week</string>
     <string name="calendar_day">Day</string>
     <string name="calendar_list">List</string>
@@ -527,6 +538,20 @@
     <string name="pomodoro_message_auto_checkin_success">Auto check-in successful</string>
     <string name="pomodoro_message_auto_checkin_failed">Auto check-in failed: %s</string>
     
+    <!-- Work Session Configuration -->
+    <string name="pomodoro_work_session_config_label">Work Session Configuration</string>
+    <string name="pomodoro_work_session_count">Work Session Count</string>
+    <string name="pomodoro_work_session_count_hint">Number of work sessions per cycle</string>
+    <string name="pomodoro_total_work_sessions">Total Work Sessions</string>
+    <string name="pomodoro_total_work_sessions_hint">0 for infinite loop</string>
+    <string name="pomodoro_work_session_number">Work Session #%d</string>
+    <string name="pomodoro_remaining_sessions">%d remaining</string>
+    <string name="pomodoro_overall_progress">Overall Progress</string>
+    <string name="pomodoro_completed_sessions">%d completed</string>
+    <string name="pomodoro_total_sessions">Total: %d</string>
+    <string name="pomodoro_task_settings_title">Task Settings</string>
+    <string name="pomodoro_task_duration_label">Task Duration</string>
+    
     <!-- Week Selector -->
     <string name="week_selector_title">Select Weeks</string>
     <string name="week_selector_tab_week_number">Week Number</string>
@@ -804,4 +829,12 @@
     <string name="subscription_confirm_renewal">Confirm Renewal</string>
     <string name="subscription_expires_on">Expires: %1$s</string>
 
+    <!-- Task Widget -->
+    <string name="task_widget_description">View and manage your tasks</string>
+    <string name="task_widget_pending_tasks">Pending Tasks</string>
+    <string name="task_widget_completed_today">Completed Today</string>
+    <string name="task_widget_incomplete">Incomplete</string>
+    <string name="task_widget_in_progress">In Progress</string>
+    <string name="task_widget_no_tasks">No tasks yet</string>
+    <string name="task_widget_add">Add</string>
 </resources>

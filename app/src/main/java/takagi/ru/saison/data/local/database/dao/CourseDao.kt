@@ -52,4 +52,21 @@ interface CourseDao {
     
     @Query("DELETE FROM courses WHERE semesterId = :semesterId")
     suspend fun deleteCoursesBySemester(semesterId: Long)
+    
+    /**
+     * 查询所有semesterId指向不存在学期的课程（孤立课程）
+     * Requirements: 3.1
+     */
+    @Query("""
+        SELECT * FROM courses 
+        WHERE semesterId NOT IN (SELECT id FROM semesters)
+    """)
+    suspend fun getOrphanedCourses(): List<CourseEntity>
+    
+    /**
+     * 批量更新课程的semesterId
+     * Requirements: 3.2
+     */
+    @Query("UPDATE courses SET semesterId = :semesterId WHERE id IN (:courseIds)")
+    suspend fun updateCourseSemester(courseIds: List<Long>, semesterId: Long)
 }

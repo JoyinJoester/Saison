@@ -35,7 +35,9 @@ object DatabaseModule {
                 SaisonDatabase.MIGRATION_7_8,
                 SaisonDatabase.MIGRATION_8_9,
                 SaisonDatabase.MIGRATION_9_10,
-                SaisonDatabase.MIGRATION_10_11
+                SaisonDatabase.MIGRATION_10_11,
+                SaisonDatabase.MIGRATION_11_12,
+                SaisonDatabase.MIGRATION_12_13
             )
             .fallbackToDestructiveMigration()
             .build()

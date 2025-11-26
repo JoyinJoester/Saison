@@ -47,6 +47,50 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
         </provider>
+        
+        <!-- ALL WIDGETS TEMPORARILY DISABLED -->
+        
+        <!-- Course Widget Receiver - DISABLED -->
+        <!--
+        <receiver
+            android:name=".ui.widget.CourseWidgetReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/course_widget_info" />
+        </receiver>
+        -->
+        
+        <!-- Single Day Widget Receiver - DISABLED -->
+        <!--
+        <receiver
+            android:name=".ui.widget.SingleDayWidgetReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/single_day_widget_info" />
+        </receiver>
+        -->
+        
+        <!-- Task Widget Receiver - DISABLED -->
+        <!--
+        <receiver
+            android:name=".ui.widget.TaskWidgetReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/task_widget_info" />
+        </receiver>
+        -->
     </application>
 
 </manifest>

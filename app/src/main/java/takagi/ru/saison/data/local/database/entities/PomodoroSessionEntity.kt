@@ -38,5 +38,10 @@ data class PomodoroSessionEntity(
     val isEarlyFinish: Boolean = false,  // 是否提前结束
     
     val interruptions: Int = 0,
-    val notes: String? = null
+    val notes: String? = null,
+    
+    // 循环模式相关字段
+    val sessionType: String = "WORK",  // "WORK", "SHORT_BREAK", "LONG_BREAK"
+    val cycleIndex: Int? = null,  // 所属周期索引(从0开始)
+    val sessionIndexInCycle: Int? = null  // 周期内会话索引(从0开始)
 )

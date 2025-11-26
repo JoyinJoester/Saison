@@ -117,21 +117,22 @@ fun AllCoursesScreen(
     
     // 添加上课时间对话框
     if (showAddScheduleDialog && selectedCourseGroup != null) {
+        val currentCourseName = selectedCourseGroup!!.courseName
         AddScheduleDialog(
             existingCourses = selectedCourseGroup!!.courses,
             onDismiss = { showAddScheduleDialog = false },
             onConfirm = { day, periodStart, periodEnd, location, weekPattern, customWeeks ->
-                viewModel.addScheduleToCourseGroup(
-                    courseName = selectedCourseGroup!!.courseName,
-                    dayOfWeek = day,
-                    periodStart = periodStart,
-                    periodEnd = periodEnd,
-                    location = location,
-                    weekPattern = weekPattern,
-                    customWeeks = customWeeks
-                )
-                showAddScheduleDialog = false
                 scope.launch {
+                    viewModel.addScheduleToCourseGroup(
+                        courseName = currentCourseName,
+                        dayOfWeek = day,
+                        periodStart = periodStart,
+                        periodEnd = periodEnd,
+                        location = location,
+                        weekPattern = weekPattern,
+                        customWeeks = customWeeks
+                    )
+                    showAddScheduleDialog = false
                     snackbarHostState.showSnackbar("上课时间已添加")
                 }
             },

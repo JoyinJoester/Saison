@@ -7,11 +7,16 @@ import takagi.ru.saison.data.local.database.dao.SemesterDao
 import takagi.ru.saison.domain.mapper.toDomain
 import takagi.ru.saison.domain.mapper.toEntity
 import takagi.ru.saison.domain.model.Semester
+import takagi.ru.saison.ui.widget.CourseWidgetScheduler
+import java.time.DayOfWeek
+import java.time.LocalDate
+import java.time.temporal.TemporalAdjusters
 import javax.inject.Inject
 
 class SemesterRepositoryImpl @Inject constructor(
     private val semesterDao: SemesterDao,
-    private val courseDao: CourseDao
+    private val courseDao: CourseDao,
+    private val widgetScheduler: CourseWidgetScheduler
 ) : SemesterRepository {
     
     override fun getAllSemesters(): Flow<List<Semester>> {
@@ -58,6 +63,7 @@ class SemesterRepositoryImpl @Inject constructor(
         semesterDao.updateSemester(
             semester.copy(updatedAt = System.currentTimeMillis()).toEntity()
         )
+        widgetScheduler.updateNow()
     }
     
     override suspend fun deleteSemester(id: Long) {
@@ -105,5 +111,47 @@ class SemesterRepositoryImpl @Inject constructor(
         courseDao.insertAll(newCourses)
         
         return newSemesterId
+    }
+    
+    /**
+     * 创建一个默认学期
+     * Requirements: 1.2, 1.3, 1.4, 1.5
+     */
+    override suspend fun createDefaultSemester(): Long {
+        val now = LocalDate.now()
+        val startDate = getMondayOfCurrentWeek(now)
+        val endDate = startDate.plusWeeks(18)
+        
+        val defaultSemester = Semester(
+            id = 0,
+            name = "未命名学期",
+            startDate = startDate,
+            endDate = endDate,
+            totalWeeks = 18,
+            isArchived = false,
+            isDefault = true,
+            createdAt = System.currentTimeMillis(),
+            updatedAt = System.currentTimeMillis()
+        )
+        
+        return semesterDao.insertSemester(defaultSemester.toEntity())
+    }
+    
+    /**
+     * 检查是否存在任何学期
+     * Requirements: 1.2
+     */
+    override suspend fun hasSemesters(): Boolean {
+        return semesterDao.hasSemesters()
+    }
+    
+    /**
+     * 计算当前周的周一
+     * Requirements: 1.3
+     * @param date 参考日期
+     * @return 该日期所在周的周一
+     */
+    private fun getMondayOfCurrentWeek(date: LocalDate): LocalDate {
+        return date.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
     }
 }

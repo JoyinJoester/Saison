@@ -37,7 +37,7 @@ fun WeekDateHeader(
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceEvenly
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         weekDays.forEach { day ->
             val date = WeekDateCalculator.getDateForDayInWeek(

@@ -47,7 +47,9 @@ fun CalendarScreen(
     viewModel: CalendarViewModel = hiltViewModel(),
     onCourseClick: (Long) -> Unit = {},
     onTaskClick: (Long) -> Unit = {},
-    onEventClick: (Long) -> Unit = {}
+    onEventClick: (Long) -> Unit = {},
+    onRoutineClick: (Long) -> Unit = {},
+    onSubscriptionClick: (Long) -> Unit = {}
 ) {
     val selectedDate by viewModel.selectedDate.collectAsState()
     val viewMode by viewModel.viewMode.collectAsState()
@@ -56,6 +58,8 @@ fun CalendarScreen(
     val events by viewModel.events.collectAsState()
     val daysWithCourses by viewModel.daysWithCourses.collectAsState()
     val datesWithTasksOrEvents by viewModel.datesWithTasksOrEvents.collectAsState()
+    val todayRoutineTasks by viewModel.todayRoutineTasks.collectAsState()
+    val upcomingSubscriptions by viewModel.upcomingSubscriptions.collectAsState()
     
     val hasIndicator = remember(daysWithCourses, datesWithTasksOrEvents) {
         { date: LocalDate ->
@@ -327,9 +331,20 @@ fun CalendarScreen(
                 courses = courses,
                 tasks = tasks,
                 events = events,
+                routineTasks = todayRoutineTasks,
+                subscriptions = upcomingSubscriptions,
+                selectedDate = selectedDate,
                 onCourseClick = onCourseClick,
                 onTaskClick = onTaskClick,
-                onEventClick = onEventClick
+                onEventClick = onEventClick,
+                onRoutineClick = onRoutineClick,
+                onSubscriptionClick = onSubscriptionClick,
+                onRoutineCheckIn = { taskId ->
+                    viewModel.checkInRoutineTask(taskId)
+                },
+                onTaskToggleComplete = { taskId ->
+                    viewModel.toggleTaskCompletion(taskId)
+                }
             )
         }
     }
@@ -522,9 +537,16 @@ fun ScheduleList(
     courses: List<Course>,
     tasks: List<Task>,
     events: List<Event>,
+    routineTasks: List<takagi.ru.saison.domain.model.routine.RoutineTaskWithStats>,
+    subscriptions: List<takagi.ru.saison.data.local.database.entities.SubscriptionEntity>,
+    selectedDate: LocalDate,
     onCourseClick: (Long) -> Unit,
     onTaskClick: (Long) -> Unit,
-    onEventClick: (Long) -> Unit
+    onEventClick: (Long) -> Unit,
+    onRoutineClick: (Long) -> Unit,
+    onSubscriptionClick: (Long) -> Unit,
+    onRoutineCheckIn: (Long) -> Unit,
+    onTaskToggleComplete: (Long) -> Unit
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -545,7 +567,11 @@ fun ScheduleList(
                 SectionHeader(title = "Tasks")
             }
             items(tasks) { task ->
-                TaskItem(task, onClick = { onTaskClick(task.id) })
+                TaskItem(
+                    task = task,
+                    onClick = { onTaskClick(task.id) },
+                    onToggleComplete = { onTaskToggleComplete(task.id) }
+                )
             }
         }
 
@@ -558,7 +584,35 @@ fun ScheduleList(
             }
         }
         
-        if (courses.isEmpty() && tasks.isEmpty() && events.isEmpty()) {
+        // 日程打卡任务
+        if (routineTasks.isNotEmpty()) {
+            item {
+                SectionHeader(title = "日程打卡")
+            }
+            items(routineTasks) { taskWithStats ->
+                takagi.ru.saison.ui.components.RoutineCardCompact(
+                    taskWithStats = taskWithStats,
+                    onCheckIn = { onRoutineCheckIn(taskWithStats.task.id) },
+                    onClick = { onRoutineClick(taskWithStats.task.id) }
+                )
+            }
+        }
+        
+        // 即将续费的订阅
+        if (subscriptions.isNotEmpty()) {
+            item {
+                SectionHeader(title = "即将续费")
+            }
+            items(subscriptions) { subscription ->
+                takagi.ru.saison.ui.components.SubscriptionItemCompact(
+                    subscription = subscription,
+                    selectedDate = selectedDate,
+                    onClick = { onSubscriptionClick(subscription.id) }
+                )
+            }
+        }
+        
+        if (courses.isEmpty() && tasks.isEmpty() && events.isEmpty() && routineTasks.isEmpty() && subscriptions.isEmpty()) {
             item {
                 Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
                     Text("No schedule for today", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -633,7 +687,11 @@ fun CourseItem(course: Course, onClick: () -> Unit) {
 }
 
 @Composable
-fun TaskItem(task: Task, onClick: () -> Unit) {
+fun TaskItem(
+    task: Task,
+    onClick: () -> Unit,
+    onToggleComplete: () -> Unit
+) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -650,7 +708,7 @@ fun TaskItem(task: Task, onClick: () -> Unit) {
         ) {
             Checkbox(
                 checked = task.isCompleted,
-                onCheckedChange = null,
+                onCheckedChange = { onToggleComplete() },
                 colors = CheckboxDefaults.colors(
                     checkedColor = MaterialTheme.colorScheme.primary,
                     uncheckedColor = MaterialTheme.colorScheme.onSecondaryContainer

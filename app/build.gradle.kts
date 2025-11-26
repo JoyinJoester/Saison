@@ -21,6 +21,14 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
+        
+        // 只包含需要的语言资源
+        resourceConfigurations += listOf("en", "ja", "vi", "zh-rCN")
+        
+        // 只包含需要的 ABI
+        ndk {
+            abiFilters += listOf("arm64-v8a", "armeabi-v7a")
+        }
     }
 
     signingConfigs {
@@ -36,8 +44,9 @@ android {
         release {
             signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
+                getDefaultProguardFile("proguard-android.txt"),
                 "proguard-rules.pro"
             )
         }
@@ -54,6 +63,10 @@ android {
 
     kotlinOptions {
         jvmTarget = "17"
+        freeCompilerArgs += listOf(
+            "-opt-in=androidx.compose.material3.ExperimentalMaterial3Api",
+            "-opt-in=androidx.compose.foundation.layout.ExperimentalLayoutApi"
+        )
     }
 
     buildFeatures {
@@ -68,6 +81,12 @@ android {
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            excludes += "/META-INF/*.kotlin_module"
+            excludes += "**/kotlin/**"
+            excludes += "**/*.txt"
+            excludes += "**/*.version"
+            excludes += "**/*.properties"
+            pickFirsts += "**/*.so"
         }
     }
 }
@@ -127,6 +146,10 @@ dependencies {
 
     // WorkManager
     implementation(libs.work.runtime.ktx)
+
+    // Glance (App Widgets)
+    implementation(libs.glance.appwidget)
+    implementation(libs.glance.material3)
 
     // Security
     implementation(libs.security.crypto)

@@ -21,7 +21,7 @@ import takagi.ru.saison.ui.components.SubtaskList
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun TaskDetailScreen(
     taskId: Long,
@@ -92,9 +92,10 @@ fun TaskDetailScreen(
                     Spacer(modifier = Modifier.height(12.dp))
                     
                     // 快捷日期按钮
-                    Row(
+                    FlowRow(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         FilterChip(
                             selected = false,
@@ -105,7 +106,12 @@ fun TaskDetailScreen(
                                     )
                                 )
                             },
-                            label = { Text("今天") },
+                            label = { 
+                                Text(
+                                    "今天",
+                                    maxLines = 1
+                                ) 
+                            },
                             leadingIcon = {
                                 Icon(
                                     Icons.Outlined.Today,
@@ -124,7 +130,12 @@ fun TaskDetailScreen(
                                     )
                                 )
                             },
-                            label = { Text("明天") },
+                            label = { 
+                                Text(
+                                    "明天",
+                                    maxLines = 1
+                                ) 
+                            },
                             leadingIcon = {
                                 Icon(
                                     Icons.Outlined.Event,
@@ -143,7 +154,12 @@ fun TaskDetailScreen(
                                     )
                                 )
                             },
-                            label = { Text("下周") },
+                            label = { 
+                                Text(
+                                    "下周",
+                                    maxLines = 1
+                                ) 
+                            },
                             leadingIcon = {
                                 Icon(
                                     Icons.Outlined.DateRange,
@@ -156,7 +172,12 @@ fun TaskDetailScreen(
                         FilterChip(
                             selected = false,
                             onClick = { showDatePicker = true },
-                            label = { Text("自定义") },
+                            label = { 
+                                Text(
+                                    "自定义",
+                                    maxLines = 1
+                                ) 
+                            },
                             leadingIcon = {
                                 Icon(
                                     Icons.Outlined.CalendarMonth,

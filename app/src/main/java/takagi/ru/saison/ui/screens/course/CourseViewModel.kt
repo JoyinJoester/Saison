@@ -36,6 +36,16 @@ class CourseViewModel @Inject constructor(
     private val _showWeekSelectorSheet = MutableStateFlow(false)
     val showWeekSelectorSheet: StateFlow<Boolean> = _showWeekSelectorSheet.asStateFlow()
     
+    // 活动学期 - 从 SemesterRepository 获取默认学期作为权威数据源
+    val activeSemester: StateFlow<takagi.ru.saison.domain.model.Semester?> = flow {
+        val semester = semesterRepository.getDefaultSemester()
+        emit(semester)
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = null
+    )
+    
     // 课程设置
     val courseSettings: StateFlow<takagi.ru.saison.domain.model.CourseSettings> = 
         courseSettingsRepository.getSettings()
@@ -45,15 +55,20 @@ class CourseViewModel @Inject constructor(
                 initialValue = takagi.ru.saison.domain.model.CourseSettings()
             )
     
-    // 当前周数 - 根据设置中的学期开始日期和偏移量计算
+    // 当前周数 - 使用 activeSemester.startDate 作为权威数据源
     val currentWeek: StateFlow<Int> = combine(
-        courseSettings,
+        activeSemester,
         _weekOffset
-    ) { settings, offset ->
-        val baseWeek = getCurrentWeekNumber(settings.semesterStartDate)
-        val calculatedWeek = (baseWeek + offset).coerceIn(1, settings.totalWeeks)
+    ) { semester, offset ->
+        if (semester == null) {
+            android.util.Log.w("CourseViewModel", "No active semester, defaulting to week 1")
+            return@combine 1
+        }
         
-        android.util.Log.d("CourseViewModel", "Week calculation: baseWeek=$baseWeek, offset=$offset, result=$calculatedWeek")
+        val baseWeek = getCurrentWeekNumber(semester)
+        val calculatedWeek = (baseWeek + offset).coerceIn(1, semester.totalWeeks)
+        
+        android.util.Log.d("CourseViewModel", "Week calculation: semester=${semester.name}, startDate=${semester.startDate}, baseWeek=$baseWeek, offset=$offset, result=$calculatedWeek")
         
         calculatedWeek
     }.stateIn(
@@ -68,17 +83,20 @@ class CourseViewModel @Inject constructor(
             calculatePeriods(settings)
         }.stateIn(
             scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
+            started = SharingStarted.Eagerly,
             initialValue = emptyList()
         )
     
     // 当前学期ID
     private val currentSemesterId: Flow<Long?> = flow {
         val semesterId = preferencesManager.getCurrentSemesterId()
+        android.util.Log.d("CourseViewModel", "Current semester ID from preferences: $semesterId")
+        
         emit(semesterId ?: run {
             // 如果没有保存的学期ID，获取默认学期或最新学期
             val defaultSemester = semesterRepository.getDefaultSemester()
                 ?: semesterRepository.getLatestSemester()
+            android.util.Log.d("CourseViewModel", "Fallback to default/latest semester: ${defaultSemester?.id}")
             defaultSemester?.id
         })
     }
@@ -94,13 +112,16 @@ class CourseViewModel @Inject constructor(
     // 所有课程（过滤当前学期）
     val allCourses: StateFlow<List<Course>> = currentSemesterId
         .flatMapLatest { semesterId ->
+            android.util.Log.d("CourseViewModel", "Loading courses for semester: $semesterId")
             if (semesterId != null) {
                 courseRepository.getCoursesBySemester(semesterId)
             } else {
+                android.util.Log.w("CourseViewModel", "No semester ID, loading all courses")
                 courseRepository.getAllCourses()
             }
         }
         .catch { e ->
+            android.util.Log.e("CourseViewModel", "Error loading courses", e)
             _uiState.value = CourseUiState.Error(e.message ?: "Unknown error")
             emit(emptyList())
         }
@@ -186,14 +207,21 @@ class CourseViewModel @Inject constructor(
      * 选择指定周次
      */
     fun selectWeek(week: Int) {
-        val settings = courseSettings.value
-        val baseWeek = getCurrentWeekNumber(settings.semesterStartDate)
+        val semester = activeSemester.value
+        val baseWeek = getCurrentWeekNumber(semester)
         _weekOffset.value = week - baseWeek
+        
+        android.util.Log.d("CourseViewModel", "selectWeek: targetWeek=$week, baseWeek=$baseWeek, offset=${week - baseWeek}")
     }
     
     /**
      * 根据当前周数设置学期开始日期
+     * @deprecated 请使用 SemesterRepository 直接更新学期数据，而不是通过 CourseSettings
      */
+    @Deprecated(
+        message = "Use SemesterRepository to update semester start date instead",
+        replaceWith = ReplaceWith("semesterRepository.updateSemester(semester.copy(startDate = newDate))")
+    )
     fun setSemesterStartByCurrentWeek(currentWeekNumber: Int) {
         viewModelScope.launch {
             val startDate = calculateSemesterStartDate(currentWeekNumber)
@@ -207,7 +235,12 @@ class CourseViewModel @Inject constructor(
     
     /**
      * 直接设置学期开始日期
+     * @deprecated 请使用 SemesterRepository 直接更新学期数据，而不是通过 CourseSettings
      */
+    @Deprecated(
+        message = "Use SemesterRepository to update semester start date instead",
+        replaceWith = ReplaceWith("semesterRepository.updateSemester(semester.copy(startDate = date))")
+    )
     fun setSemesterStartDate(date: LocalDate) {
         viewModelScope.launch {
             val updatedSettings = courseSettings.value.copy(
@@ -263,66 +296,77 @@ class CourseViewModel @Inject constructor(
      * 判断课程在某周是否上课
      */
     fun isCourseActiveInWeek(course: Course, week: Int): Boolean {
+        android.util.Log.d("CourseViewModel", "isCourseActiveInWeek: checking course='${course.name}', weekPattern=${course.weekPattern}, targetWeek=$week")
+        
         // 确保周数有效
         if (week < 1) {
-            android.util.Log.w("CourseViewModel", "Invalid week number: $week for course ${course.name}")
+            android.util.Log.w("CourseViewModel", "isCourseActiveInWeek: Invalid week number: $week for course ${course.name}, returning false")
             return false
         }
         
         val result = when (course.weekPattern) {
             WeekPattern.ALL -> {
                 // 全周课程，总是显示
+                android.util.Log.d("CourseViewModel", "isCourseActiveInWeek: ${course.name} uses ALL pattern, always active")
                 true
             }
             WeekPattern.ODD -> {
                 // 单周课程，只在奇数周显示
-                week % 2 == 1
+                val isActive = week % 2 == 1
+                android.util.Log.d("CourseViewModel", "isCourseActiveInWeek: ${course.name} uses ODD pattern, week=$week, isOdd=$isActive")
+                isActive
             }
             WeekPattern.EVEN -> {
                 // 双周课程，只在偶数周显示
-                week % 2 == 0
+                val isActive = week % 2 == 0
+                android.util.Log.d("CourseViewModel", "isCourseActiveInWeek: ${course.name} uses EVEN pattern, week=$week, isEven=$isActive")
+                isActive
             }
             WeekPattern.CUSTOM -> {
                 // 自定义周课程，检查是否在指定周数列表中
                 val customWeeks = course.customWeeks
                 if (customWeeks == null || customWeeks.isEmpty()) {
-                    android.util.Log.w("CourseViewModel", "Course ${course.name} has CUSTOM pattern but no customWeeks")
+                    android.util.Log.w("CourseViewModel", "isCourseActiveInWeek: ${course.name} has CUSTOM pattern but customWeeks is null or empty, returning false")
                     false
                 } else {
-                    customWeeks.contains(week)
+                    val isActive = customWeeks.contains(week)
+                    android.util.Log.d("CourseViewModel", "isCourseActiveInWeek: ${course.name} uses CUSTOM pattern, customWeeks=$customWeeks, week=$week, isActive=$isActive")
+                    isActive
                 }
             }
             WeekPattern.A -> {
                 // A周模式 - 需要根据实际需求实现
                 // 暂时简化处理，总是显示
+                android.util.Log.d("CourseViewModel", "isCourseActiveInWeek: ${course.name} uses A pattern, always active (simplified)")
                 true
             }
             WeekPattern.B -> {
                 // B周模式 - 需要根据实际需求实现
                 // 暂时简化处理，总是显示
+                android.util.Log.d("CourseViewModel", "isCourseActiveInWeek: ${course.name} uses B pattern, always active (simplified)")
                 true
             }
         }
         
-        android.util.Log.d("CourseViewModel", "isCourseActiveInWeek: ${course.name}, pattern=${course.weekPattern}, week=$week, result=$result")
+        android.util.Log.d("CourseViewModel", "isCourseActiveInWeek: FINAL RESULT for ${course.name} in week $week: $result")
         
         return result
     }
     
     /**
      * 计算当前周数
-     * @param semesterStartDate 学期开始日期，如果为null则使用年初作为起点
+     * @param semester 学期对象，使用其 startDate 作为权威数据源
      */
-    private fun getCurrentWeekNumber(semesterStartDate: LocalDate?): Int {
-        if (semesterStartDate == null) {
-            android.util.Log.w("CourseViewModel", "Semester start date not set, using year start")
+    private fun getCurrentWeekNumber(semester: takagi.ru.saison.domain.model.Semester?): Int {
+        if (semester == null) {
+            android.util.Log.w("CourseViewModel", "No semester provided, defaulting to week 1")
+            return 1
         }
         
         val today = LocalDate.now()
-        val startDate = semesterStartDate ?: LocalDate.of(today.year, 1, 1)
-        val week = weekCalculator.calculateCurrentWeek(startDate, today)
+        val week = weekCalculator.calculateCurrentWeek(semester.startDate, today)
         
-        android.util.Log.d("CourseViewModel", "getCurrentWeekNumber: startDate=$startDate, today=$today, week=$week")
+        android.util.Log.d("CourseViewModel", "getCurrentWeekNumber: semester=${semester.name}, startDate=${semester.startDate}, today=$today, week=$week")
         
         return week
     }
@@ -364,7 +408,12 @@ class CourseViewModel @Inject constructor(
      * 根据节次编号获取节次信息
      */
     fun getPeriodByNumber(periodNumber: Int): takagi.ru.saison.domain.model.CoursePeriod? {
-        return periods.value.find { it.periodNumber == periodNumber }
+        val allPeriods = periods.value
+        android.util.Log.d("CourseViewModel", "getPeriodByNumber: periodNumber=$periodNumber, total periods=${allPeriods.size}")
+        if (allPeriods.isEmpty()) {
+            android.util.Log.w("CourseViewModel", "Periods list is empty! CourseSettings may not be initialized.")
+        }
+        return allPeriods.find { it.periodNumber == periodNumber }
     }
     
     /**
@@ -589,7 +638,14 @@ class CourseViewModel @Inject constructor(
      * 选择课程组
      */
     fun selectCourseGroup(courseName: String) {
-        _selectedCourseGroup.value = courseGroups.value.find { it.courseName == courseName }
+        viewModelScope.launch {
+            // 等待courseGroups更新
+            courseGroups.first { groups ->
+                groups.any { it.courseName == courseName }
+            }.let { groups ->
+                _selectedCourseGroup.value = groups.find { it.courseName == courseName }
+            }
+        }
     }
     
     /**
@@ -649,7 +705,7 @@ class CourseViewModel @Inject constructor(
     /**
      * 添加新的上课时间到课程组
      */
-    fun addScheduleToCourseGroup(
+    suspend fun addScheduleToCourseGroup(
         courseName: String,
         dayOfWeek: DayOfWeek,
         periodStart: Int,
@@ -658,38 +714,46 @@ class CourseViewModel @Inject constructor(
         weekPattern: WeekPattern,
         customWeeks: List<Int>?
     ) {
-        viewModelScope.launch {
-            try {
-                // 获取该课程组的第一个课程作为模板
-                val template = allCourses.value.find { it.name == courseName }
-                if (template != null) {
-                    // 计算开始和结束时间
-                    val startPeriod = getPeriodByNumber(periodStart)
-                    val endPeriod = getPeriodByNumber(periodEnd)
+        try {
+            // 获取该课程组的第一个课程作为模板
+            val template = allCourses.value.find { it.name == courseName }
+            if (template != null) {
+                // 计算开始和结束时间
+                val startPeriod = getPeriodByNumber(periodStart)
+                val endPeriod = getPeriodByNumber(periodEnd)
+                
+                if (startPeriod != null && endPeriod != null) {
+                    val newCourse = template.copy(
+                        id = 0, // 新课程
+                        dayOfWeek = dayOfWeek,
+                        periodStart = periodStart,
+                        periodEnd = periodEnd,
+                        startTime = startPeriod.startTime,
+                        endTime = endPeriod.endTime,
+                        location = location,
+                        weekPattern = weekPattern,
+                        customWeeks = customWeeks,
+                        isCustomTime = false,
+                        createdAt = System.currentTimeMillis(),
+                        updatedAt = System.currentTimeMillis()
+                    )
+                    courseRepository.insertCourse(newCourse)
                     
-                    if (startPeriod != null && endPeriod != null) {
-                        val newCourse = template.copy(
-                            id = 0, // 新课程
-                            dayOfWeek = dayOfWeek,
-                            periodStart = periodStart,
-                            periodEnd = periodEnd,
-                            startTime = startPeriod.startTime,
-                            endTime = endPeriod.endTime,
-                            location = location,
-                            weekPattern = weekPattern,
-                            customWeeks = customWeeks,
-                            isCustomTime = false,
-                            createdAt = System.currentTimeMillis(),
-                            updatedAt = System.currentTimeMillis()
-                        )
-                        addCourse(newCourse)
-                        // 刷新选中的课程组
-                        selectCourseGroup(courseName)
-                    }
+                    android.util.Log.d("CourseViewModel", "Course added successfully, refreshing course group: $courseName")
+                    
+                    // 刷新选中的课程组
+                    selectCourseGroup(courseName)
+                } else {
+                    android.util.Log.e("CourseViewModel", "Period not found: start=$periodStart, end=$periodEnd")
+                    _uiState.value = CourseUiState.Error("无法找到对应的节次信息")
                 }
-            } catch (e: Exception) {
-                _uiState.value = CourseUiState.Error(e.message ?: "添加上课时间失败")
+            } else {
+                android.util.Log.e("CourseViewModel", "Course template not found: $courseName")
+                _uiState.value = CourseUiState.Error("找不到课程模板")
             }
+        } catch (e: Exception) {
+            android.util.Log.e("CourseViewModel", "Error adding schedule", e)
+            _uiState.value = CourseUiState.Error(e.message ?: "添加上课时间失败")
         }
     }
 }

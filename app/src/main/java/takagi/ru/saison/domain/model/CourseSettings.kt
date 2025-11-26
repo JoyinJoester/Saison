@@ -15,7 +15,8 @@ data class CourseSettings(
     val lunchBreakAfterPeriod: Int? = 4,                            // 午休在第几节课后
     val lunchBreakDuration: Int = 90,                               // 午休时长（分钟）
     val dinnerBreakDuration: Int = 60,                              // 晚休时长（分钟）（暂时保留但不使用）
-    val semesterStartDate: LocalDate? = null,                        // 学期第一周开始日期
+    @Deprecated("Use Semester.startDate from SemesterRepository instead. This field is kept for backward compatibility only.")
+    val semesterStartDate: LocalDate? = null,                        // 学期第一周开始日期（已弃用，请使用 Semester.startDate）
     val totalWeeks: Int = 18,                                        // 学期总周数
     val gridCellHeight: Int = 80,                                   // 网格单元格高度（dp）
     val showWeekends: Boolean = true,                               // 是否显示周末

@@ -12,6 +12,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import takagi.ru.saison.domain.model.Priority
 import takagi.ru.saison.util.NaturalLanguageParser
@@ -19,7 +20,7 @@ import takagi.ru.saison.util.ParsedTask
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun AddTaskSheet(
     existingTask: takagi.ru.saison.domain.model.Task? = null,
@@ -103,17 +104,24 @@ fun AddTaskSheet(
             
             Spacer(modifier = Modifier.height(12.dp))
             
-            // 快捷日期按钮 - 第一行
-            Row(
+            // 快捷日期按钮
+            FlowRow(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 FilterChip(
                     selected = false,
                     onClick = {
                         selectedDate = LocalDateTime.now().withHour(23).withMinute(59)
                     },
-                    label = { Text("今天") },
+                    label = { 
+                        Text(
+                            "今天",
+                            maxLines = 1,
+                            overflow = TextOverflow.Visible
+                        ) 
+                    },
                     leadingIcon = {
                         Icon(
                             Icons.Outlined.Today,
@@ -128,7 +136,13 @@ fun AddTaskSheet(
                     onClick = {
                         selectedDate = LocalDateTime.now().plusDays(1).withHour(23).withMinute(59)
                     },
-                    label = { Text("明天") },
+                    label = { 
+                        Text(
+                            "明天",
+                            maxLines = 1,
+                            overflow = TextOverflow.Visible
+                        ) 
+                    },
                     leadingIcon = {
                         Icon(
                             Icons.Outlined.Event,
@@ -143,7 +157,13 @@ fun AddTaskSheet(
                     onClick = {
                         selectedDate = LocalDateTime.now().plusWeeks(1).withHour(23).withMinute(59)
                     },
-                    label = { Text("下周") },
+                    label = { 
+                        Text(
+                            "下周",
+                            maxLines = 1,
+                            overflow = TextOverflow.Visible
+                        ) 
+                    },
                     leadingIcon = {
                         Icon(
                             Icons.Outlined.DateRange,
@@ -156,7 +176,13 @@ fun AddTaskSheet(
                 FilterChip(
                     selected = false,
                     onClick = { showDatePicker = true },
-                    label = { Text("自定义") },
+                    label = { 
+                        Text(
+                            "自定义",
+                            maxLines = 1,
+                            overflow = TextOverflow.Visible
+                        ) 
+                    },
                     leadingIcon = {
                         Icon(
                             Icons.Outlined.CalendarMonth,
@@ -330,8 +356,13 @@ fun AddTaskSheet(
                                 FilterChip(
                                     selected = selectedRepeatType == "不重复",
                                     onClick = { selectedRepeatType = "不重复" },
-                                    label = { Text("不重复") },
-                                    modifier = Modifier.weight(1f),
+                                    label = { 
+                                        Text(
+                                            "不重复",
+                                            modifier = Modifier.padding(horizontal = 2.dp)
+                                        ) 
+                                    },
+                                    modifier = Modifier.weight(1f).heightIn(min = 40.dp),
                                     colors = FilterChipDefaults.filterChipColors(
                                         selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
                                         selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
@@ -340,8 +371,13 @@ fun AddTaskSheet(
                                 FilterChip(
                                     selected = selectedRepeatType == "每天",
                                     onClick = { selectedRepeatType = "每天" },
-                                    label = { Text("每天") },
-                                    modifier = Modifier.weight(1f),
+                                    label = { 
+                                        Text(
+                                            "每天",
+                                            modifier = Modifier.padding(horizontal = 2.dp)
+                                        ) 
+                                    },
+                                    modifier = Modifier.weight(1f).heightIn(min = 40.dp),
                                     colors = FilterChipDefaults.filterChipColors(
                                         selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
                                         selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
@@ -350,8 +386,13 @@ fun AddTaskSheet(
                                 FilterChip(
                                     selected = selectedRepeatType == "每周",
                                     onClick = { selectedRepeatType = "每周" },
-                                    label = { Text("每周") },
-                                    modifier = Modifier.weight(1f),
+                                    label = { 
+                                        Text(
+                                            "每周",
+                                            modifier = Modifier.padding(horizontal = 2.dp)
+                                        ) 
+                                    },
+                                    modifier = Modifier.weight(1f).heightIn(min = 40.dp),
                                     colors = FilterChipDefaults.filterChipColors(
                                         selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
                                         selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
@@ -366,8 +407,13 @@ fun AddTaskSheet(
                                 FilterChip(
                                     selected = selectedRepeatType == "每月",
                                     onClick = { selectedRepeatType = "每月" },
-                                    label = { Text("每月") },
-                                    modifier = Modifier.weight(1f),
+                                    label = { 
+                                        Text(
+                                            "每月",
+                                            modifier = Modifier.padding(horizontal = 2.dp)
+                                        ) 
+                                    },
+                                    modifier = Modifier.weight(1f).heightIn(min = 40.dp),
                                     colors = FilterChipDefaults.filterChipColors(
                                         selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
                                         selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
@@ -376,8 +422,13 @@ fun AddTaskSheet(
                                 FilterChip(
                                     selected = selectedRepeatType == "每年",
                                     onClick = { selectedRepeatType = "每年" },
-                                    label = { Text("每年") },
-                                    modifier = Modifier.weight(1f),
+                                    label = { 
+                                        Text(
+                                            "每年",
+                                            modifier = Modifier.padding(horizontal = 2.dp)
+                                        ) 
+                                    },
+                                    modifier = Modifier.weight(1f).heightIn(min = 40.dp),
                                     colors = FilterChipDefaults.filterChipColors(
                                         selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
                                         selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
@@ -388,8 +439,13 @@ fun AddTaskSheet(
                                     onClick = { 
                                         showCustomRepeatDialog = true
                                     },
-                                    label = { Text("自定义") },
-                                    modifier = Modifier.weight(1f),
+                                    label = { 
+                                        Text(
+                                            "自定义",
+                                            modifier = Modifier.padding(horizontal = 2.dp)
+                                        ) 
+                                    },
+                                    modifier = Modifier.weight(1f).heightIn(min = 40.dp),
                                     colors = FilterChipDefaults.filterChipColors(
                                         selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
                                         selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
@@ -749,10 +805,11 @@ private fun PriorityButton(
         label = { 
             Text(
                 label,
-                style = MaterialTheme.typography.labelLarge
+                style = MaterialTheme.typography.labelLarge,
+                modifier = Modifier.padding(horizontal = 4.dp)
             ) 
         },
-        modifier = modifier,
+        modifier = modifier.heightIn(min = 40.dp),
         colors = FilterChipDefaults.filterChipColors(
             selectedContainerColor = color.copy(alpha = 0.15f),
             selectedLabelColor = color

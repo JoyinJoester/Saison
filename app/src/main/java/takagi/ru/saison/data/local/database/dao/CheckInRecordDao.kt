@@ -100,4 +100,11 @@ interface CheckInRecordDao {
      */
     @Query("DELETE FROM check_in_records WHERE routine_task_id = :taskId")
     suspend fun deleteByTaskId(taskId: Long)
+    
+    /**
+     * 获取所有打卡记录（用于监听变化）
+     * 按打卡时间倒序排列
+     */
+    @Query("SELECT * FROM check_in_records ORDER BY check_in_time DESC")
+    fun getAllCheckIns(): Flow<List<CheckInRecordEntity>>
 }

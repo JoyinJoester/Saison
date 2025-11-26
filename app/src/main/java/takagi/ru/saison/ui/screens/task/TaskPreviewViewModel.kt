@@ -31,12 +31,14 @@ class TaskPreviewViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 _uiState.value = TaskPreviewUiState.Loading
-                val task = taskRepository.getTaskById(taskId)
-                if (task != null) {
-                    _task.value = task
-                    _uiState.value = TaskPreviewUiState.Success
-                } else {
-                    _uiState.value = TaskPreviewUiState.Error("Task not found")
+                // 使用 Flow 来监听任务变化，这样当任务更新时UI会自动刷新
+                taskRepository.getTaskByIdFlow(taskId).collect { task ->
+                    if (task != null) {
+                        _task.value = task
+                        _uiState.value = TaskPreviewUiState.Success
+                    } else {
+                        _uiState.value = TaskPreviewUiState.Error("Task not found")
+                    }
                 }
             } catch (e: Exception) {
                 _uiState.value = TaskPreviewUiState.Error(e.message ?: "Unknown error")
@@ -49,9 +51,13 @@ class TaskPreviewViewModel @Inject constructor(
             _task.value?.let { currentTask ->
                 val updatedTask = currentTask.copy(
                     isCompleted = !currentTask.isCompleted,
+                    completedAt = if (!currentTask.isCompleted) LocalDateTime.now() else null,
                     updatedAt = LocalDateTime.now()
                 )
+                // 更新数据库
                 taskRepository.updateTask(updatedTask)
+                // 立即更新本地状态，提供即时反馈
+                _task.value = updatedTask
             }
         }
     }

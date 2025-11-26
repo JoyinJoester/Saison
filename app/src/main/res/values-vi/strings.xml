@@ -48,6 +48,14 @@
     
     <!-- Calendar -->
     <string name="calendar_month">Tháng</string>
+    
+    <string name="widget_today">Hôm nay</string>
+    <string name="widget_tomorrow">Ngày mai</string>
+    <string name="widget_no_courses">Không có lớp</string>
+    <string name="widget_no_semester">Vui lòng tạo học kỳ trước</string>
+    <string name="widget_description">Hiển thị lớp học hôm nay và ngày mai</string>
+    <string name="widget_date_format">%1$d.%2$d Tuần %3$d %4$s</string>
+    <string name="single_day_widget_description">Hiển thị lớp học một ngày, có thể chuyển trái phải</string>
     <string name="calendar_week">Tuần</string>
     <string name="calendar_day">Ngày</string>
     <string name="calendar_list">Danh sách</string>
@@ -739,5 +747,21 @@
     <string name="subscription_new_expiration_date">Ngày hết hạn mới</string>
     <string name="subscription_confirm_renewal">Xác nhận gia hạn</string>
     <string name="subscription_expires_on">Hết hạn: %1$s</string>
-
+    
+    <!-- Cải tiến chu kỳ Pomodoro -->
+    <string name="pomodoro_task_settings_title">Cài đặt nhiệm vụ</string>
+    <string name="pomodoro_task_duration_label">Thời gian nhiệm vụ</string>
+    <string name="pomodoro_break_mode">Chế độ nghỉ</string>
+    <string name="pomodoro_cycle_pattern_label">Mẫu chu kỳ</string>
+    <string name="pomodoro_work_count">Làm việc</string>
+    <string name="pomodoro_short_break_count">Nghỉ ngắn</string>
+    <string name="pomodoro_long_break_count">Nghỉ dài</string>
+    <string name="pomodoro_total_cycles">Số chu kỳ</string>
+    <string name="pomodoro_total_cycles_hint">0 là vô hạn</string>
+    <string name="pomodoro_session_work">Phiên làm việc</string>
+    <string name="pomodoro_session_short_break">Nghỉ ngắn</string>
+    <string name="pomodoro_session_long_break">Nghỉ dài</string>
+    <string name="pomodoro_remaining_cycles">Còn %1$d chu kỳ</string>
+    <string name="pomodoro_cycle_progress">Chu kỳ %1$d</string>
+    <string name="pomodoro_session_index">%1$d / %2$d</string>
 </resources>

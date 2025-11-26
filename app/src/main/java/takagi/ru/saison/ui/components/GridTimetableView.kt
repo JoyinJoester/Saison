@@ -96,13 +96,19 @@ fun GridTimetableView(
                     )
                 }
                 
-                WeekDateHeader(
-                    semesterStartDate = semesterStartDate,
-                    currentWeek = currentWeek,
-                    weekDays = weekDays,
-                    currentDay = currentDay,
-                    modifier = Modifier.weight(1f)
-                )
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(start = 4.dp)
+                ) {
+                    WeekDateHeader(
+                        semesterStartDate = semesterStartDate,
+                        currentWeek = currentWeek,
+                        weekDays = weekDays,
+                        currentDay = currentDay,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
             }
             
             // 可滚动内容: 时间列 + 课程网格(使用Box+绝对定位)

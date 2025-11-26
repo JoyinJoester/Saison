@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import android.content.Intent
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -39,11 +40,18 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var preferencesManager: PreferencesManager
     
+    // 用于从小组件传递的导航参数
+    private var widgetTaskId: Long? = null
+    private var widgetNavigateTo: String? = null
+    
     override fun onCreate(savedInstanceState: Bundle?) {
         // 安装 Splash Screen（必须在 super.onCreate 之前）
         installSplashScreen()
         
         super.onCreate(savedInstanceState)
+        
+        // 处理从小组件传递的Intent
+        handleWidgetIntent(intent)
         
         // 启用沉浸式状态栏（参考 Monica 的实现）
         enableEdgeToEdge()
@@ -60,7 +68,34 @@ class MainActivity : ComponentActivity() {
         }
         
         setContent {
-            SaisonAppWithTheme()
+            SaisonAppWithTheme(
+                widgetTaskId = widgetTaskId,
+                widgetNavigateTo = widgetNavigateTo,
+                onWidgetNavigationHandled = {
+                    // 清除导航参数，避免重复导航
+                    widgetTaskId = null
+                    widgetNavigateTo = null
+                }
+            )
+        }
+    }
+    
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        // 处理从小组件传递的新Intent（当Activity已存在时）
+        handleWidgetIntent(intent)
+    }
+    
+    private fun handleWidgetIntent(intent: Intent?) {
+        intent?.let {
+            val taskId = it.getLongExtra("widget_task_id", -1L)
+            val navigateTo = it.getStringExtra("widget_navigate_to")
+            
+            if (taskId != -1L && navigateTo != null) {
+                android.util.Log.d("MainActivity", "Widget intent: taskId=$taskId, navigateTo=$navigateTo")
+                widgetTaskId = taskId
+                widgetNavigateTo = navigateTo
+            }
         }
     }
     
@@ -85,7 +120,11 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun SaisonAppWithTheme() {
+fun SaisonAppWithTheme(
+    widgetTaskId: Long? = null,
+    widgetNavigateTo: String? = null,
+    onWidgetNavigationHandled: () -> Unit = {}
+) {
     // 使用 hiltViewModel 获取 ThemeViewModel
     // 注意：这里使用的是 Activity Context，因为 attachBaseContext 已经设置了正确的 locale
     val themeViewModel = androidx.hilt.navigation.compose.hiltViewModel<takagi.ru.saison.ui.theme.ThemeViewModel>()
@@ -116,12 +155,20 @@ fun SaisonAppWithTheme() {
         darkTheme = darkTheme,
         dynamicColor = useDynamicColor
     ) {
-        SaisonApp()
+        SaisonApp(
+            widgetTaskId = widgetTaskId,
+            widgetNavigateTo = widgetNavigateTo,
+            onWidgetNavigationHandled = onWidgetNavigationHandled
+        )
     }
 }
 
 @Composable
-fun SaisonApp() {
+fun SaisonApp(
+    widgetTaskId: Long? = null,
+    widgetNavigateTo: String? = null,
+    onWidgetNavigationHandled: () -> Unit = {}
+) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
@@ -139,6 +186,27 @@ fun SaisonApp() {
     // 确定起始页面：使用第一个可见的导航项
     val startDestination = remember(visibleNavItems) {
         visibleNavItems.firstOrNull()?.toNavItem()?.route ?: Screen.Tasks.route
+    }
+    
+    // 处理从小组件传递的导航请求
+    LaunchedEffect(widgetTaskId, widgetNavigateTo) {
+        if (widgetTaskId != null && widgetNavigateTo != null) {
+            android.util.Log.d("SaisonApp", "Handling widget navigation: taskId=$widgetTaskId, navigateTo=$widgetNavigateTo")
+            when (widgetNavigateTo) {
+                "task_preview" -> {
+                    navController.navigate(Screen.TaskPreview.createRoute(widgetTaskId)) {
+                        // 确保不会创建多个相同的目的地
+                        launchSingleTop = true
+                    }
+                }
+                "task_edit" -> {
+                    navController.navigate(Screen.TaskEdit.createRoute(widgetTaskId)) {
+                        launchSingleTop = true
+                    }
+                }
+            }
+            onWidgetNavigationHandled()
+        }
     }
     
     Scaffold(

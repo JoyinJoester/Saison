@@ -183,7 +183,12 @@ fun TaskListScreen(
                             }
                             LazyColumn(
                                 state = listState,
-                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                                contentPadding = PaddingValues(
+                                    start = 16.dp,
+                                    end = 16.dp,
+                                    top = 8.dp,
+                                    bottom = 88.dp // 为浮动按钮留出空间
+                                ),
                                 verticalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 groupedTasks.forEach { (dateGroup, groupTasks) ->
@@ -254,7 +259,12 @@ fun TaskListScreen(
                         else -> {
                             LazyColumn(
                                 state = listState,
-                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                                contentPadding = PaddingValues(
+                                    start = 16.dp,
+                                    end = 16.dp,
+                                    top = 8.dp,
+                                    bottom = 88.dp // 为浮动按钮留出空间
+                                ),
                                 verticalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 // 未完成任务

@@ -48,6 +48,14 @@
     
     <!-- Calendar -->
     <string name="calendar_month">月</string>
+    
+    <string name="widget_today">今日</string>
+    <string name="widget_tomorrow">明日</string>
+    <string name="widget_no_courses">授業なし</string>
+    <string name="widget_no_semester">学期を作成してください</string>
+    <string name="widget_description">今日と明日の授業を表示</string>
+    <string name="widget_date_format">%1$d.%2$d 第%3$d週 %4$s</string>
+    <string name="single_day_widget_description">1日の授業を表示、左右切り替え可能</string>
     <string name="calendar_week">週</string>
     <string name="calendar_day">日</string>
     <string name="calendar_list">リスト</string>
@@ -740,5 +748,21 @@
     <string name="subscription_new_expiration_date">新しい有効期限</string>
     <string name="subscription_confirm_renewal">更新を確認</string>
     <string name="subscription_expires_on">有効期限：%1$s</string>
-
+    
+    <!-- ポモドーロサイクル強化 -->
+    <string name="pomodoro_task_settings_title">タスク設定</string>
+    <string name="pomodoro_task_duration_label">タスク時間</string>
+    <string name="pomodoro_break_mode">休憩モード</string>
+    <string name="pomodoro_cycle_pattern_label">サイクルパターン</string>
+    <string name="pomodoro_work_count">作業</string>
+    <string name="pomodoro_short_break_count">短い休憩</string>
+    <string name="pomodoro_long_break_count">長い休憩</string>
+    <string name="pomodoro_total_cycles">サイクル数</string>
+    <string name="pomodoro_total_cycles_hint">0は無限</string>
+    <string name="pomodoro_session_work">作業セッション</string>
+    <string name="pomodoro_session_short_break">短い休憩</string>
+    <string name="pomodoro_session_long_break">長い休憩</string>
+    <string name="pomodoro_remaining_cycles">残り%1$dサイクル</string>
+    <string name="pomodoro_cycle_progress">サイクル%1$d</string>
+    <string name="pomodoro_session_index">%1$d / %2$d</string>
 </resources>

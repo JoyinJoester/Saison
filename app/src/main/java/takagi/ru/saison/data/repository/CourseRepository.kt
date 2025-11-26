@@ -6,14 +6,25 @@ import takagi.ru.saison.data.local.database.dao.CourseDao
 import takagi.ru.saison.domain.mapper.toDomain
 import takagi.ru.saison.domain.mapper.toEntity
 import takagi.ru.saison.domain.model.Course
+import takagi.ru.saison.ui.widget.CourseWidgetScheduler
 import java.time.DayOfWeek
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class CourseRepository @Inject constructor(
-    private val courseDao: CourseDao
+    private val courseDao: CourseDao,
+    private val widgetScheduler: CourseWidgetScheduler,
+    @javax.inject.Named("applicationContext") private val context: android.content.Context
 ) {
+    
+    // Lazy inject to avoid circular dependency
+    private val widgetUpdateCoordinator: takagi.ru.saison.ui.widget.WidgetUpdateCoordinator by lazy {
+        dagger.hilt.android.EntryPointAccessors.fromApplication(
+            context,
+            takagi.ru.saison.ui.widget.WidgetEntryPoints.UpdateCoordinator::class.java
+        ).widgetUpdateCoordinator()
+    }
     
     fun getAllCourses(): Flow<List<Course>> {
         return courseDao.getAllCoursesFlow().map { entities ->
@@ -38,19 +49,59 @@ class CourseRepository @Inject constructor(
     }
     
     suspend fun insertCourse(course: Course): Long {
-        return courseDao.insert(course.toEntity())
+        val result = courseDao.insert(course.toEntity())
+        widgetScheduler.updateNow()
+        
+        // Trigger widget update via coordinator
+        try {
+            widgetUpdateCoordinator.onCourseChanged(context)
+            android.util.Log.d("CourseRepository", "Widget update triggered after course insert")
+        } catch (e: Exception) {
+            android.util.Log.e("CourseRepository", "Failed to trigger widget update", e)
+        }
+        
+        return result
     }
     
     suspend fun insertCourses(courses: List<Course>): List<Long> {
-        return courseDao.insertAll(courses.map { it.toEntity() })
+        val result = courseDao.insertAll(courses.map { it.toEntity() })
+        widgetScheduler.updateNow()
+        
+        // Trigger widget update via coordinator
+        try {
+            widgetUpdateCoordinator.onCourseChanged(context)
+            android.util.Log.d("CourseRepository", "Widget update triggered after courses insert")
+        } catch (e: Exception) {
+            android.util.Log.e("CourseRepository", "Failed to trigger widget update", e)
+        }
+        
+        return result
     }
     
     suspend fun updateCourse(course: Course) {
         courseDao.update(course.toEntity())
+        widgetScheduler.updateNow()
+        
+        // Trigger widget update via coordinator
+        try {
+            widgetUpdateCoordinator.onCourseChanged(context)
+            android.util.Log.d("CourseRepository", "Widget update triggered after course update")
+        } catch (e: Exception) {
+            android.util.Log.e("CourseRepository", "Failed to trigger widget update", e)
+        }
     }
     
     suspend fun deleteCourse(courseId: Long) {
         courseDao.deleteById(courseId)
+        widgetScheduler.updateNow()
+        
+        // Trigger widget update via coordinator
+        try {
+            widgetUpdateCoordinator.onCourseChanged(context)
+            android.util.Log.d("CourseRepository", "Widget update triggered after course delete")
+        } catch (e: Exception) {
+            android.util.Log.e("CourseRepository", "Failed to trigger widget update", e)
+        }
     }
     
     suspend fun deleteExpiredCourses() {

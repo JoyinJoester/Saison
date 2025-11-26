@@ -1,6 +1,7 @@
 package takagi.ru.saison.data.repository
 
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import takagi.ru.saison.data.local.database.dao.CheckInRecordDao
 import takagi.ru.saison.data.local.database.dao.RoutineTaskDao
@@ -155,9 +156,44 @@ class RoutineRepositoryImpl @Inject constructor(
     // ========== 统计查询 ==========
     
     override fun getRoutineTasksWithStats(): Flow<List<RoutineTaskWithStats>> {
-        return getAllRoutineTasks().map { tasks ->
+        // 监听所有打卡记录的变化，以便在打卡后刷新统计
+        return combine(
+            getAllRoutineTasks(),
+            checkInRecordDao.getAllCheckIns()
+        ) { tasks, checkIns ->
+            // 为每个任务创建统计信息
+            // 使用 checkIns 来触发重新计算
             tasks.map { task ->
-                createTaskWithStats(task)
+                val isInActiveCycle = cycleCalculator.isInActiveCycle(task)
+                val currentCycle = cycleCalculator.getCurrentCycle(task)
+                val nextActiveDate = if (!isInActiveCycle) {
+                    cycleCalculator.getNextActiveDate(task)
+                } else null
+                
+                // 从 checkIns 中计算当前周期的打卡次数
+                val checkInCount = if (currentCycle != null) {
+                    checkIns.count { record ->
+                        record.routineTaskId == task.id &&
+                        record.cycleStartDate == currentCycle.first.toEpochDay() &&
+                        record.cycleEndDate == currentCycle.second.toEpochDay()
+                    }
+                } else 0
+                
+                // 获取最后一次打卡
+                val lastCheckIn = checkIns
+                    .filter { it.routineTaskId == task.id }
+                    .maxByOrNull { it.checkInTime }
+                    ?.let { RoutineMapper.toDomain(it) }
+                
+                RoutineTaskWithStats(
+                    task = task,
+                    checkInCount = checkInCount,
+                    isInActiveCycle = isInActiveCycle,
+                    currentCycleStart = currentCycle?.first,
+                    currentCycleEnd = currentCycle?.second,
+                    nextActiveDate = nextActiveDate,
+                    lastCheckInTime = lastCheckIn?.checkInTime
+                )
             }
         }
     }

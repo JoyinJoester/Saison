@@ -76,8 +76,32 @@
     public static *** i(...);
 }
 
-# Optimization
--optimizationpasses 5
--dontusemixedcaseclassnames
--dontskipnonpubliclibraryclasses
--verbose
+# Keep data classes for serialization
+-keep class takagi.ru.saison.domain.model.** { *; }
+-keep class takagi.ru.saison.data.local.database.entities.** { *; }
+
+# Keep Navigation arguments
+-keepnames class androidx.navigation.fragment.NavHostFragment
+-keep class * extends androidx.navigation.Navigator
+
+# Keep ViewModels
+-keep class * extends androidx.lifecycle.ViewModel {
+    <init>();
+}
+-keep class * extends androidx.lifecycle.AndroidViewModel {
+    <init>(android.app.Application);
+}
+
+# Keep Parcelable
+-keepclassmembers class * implements android.os.Parcelable {
+    public static final ** CREATOR;
+}
+
+# Keep enums
+-keepclassmembers enum * {
+    public static **[] values();
+    public static ** valueOf(java.lang.String);
+}
+
+# Disable optimizations to avoid R8 ConcurrentModificationException
+-dontoptimize

@@ -129,6 +129,7 @@ fun PomodoroScreen(
     if (showSettingsSheet) {
         PomodoroSettingsSheet(
             settings = uiState.settings,
+            selectedTask = uiState.selectedRoutineTask,
             onSettingsChange = { viewModel.updateSettings(it) },
             onDismiss = { showSettingsSheet = false }
         )

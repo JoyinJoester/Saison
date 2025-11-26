@@ -43,25 +43,44 @@ class PomodoroViewModel @Inject constructor(
         // 加载设置
         viewModelScope.launch {
             preferencesManager.pomodoroWorkDuration.collect { duration ->
-                _uiState.update { it.copy(
-                    settings = it.settings.copy(workDuration = duration)
-                )}
+                _uiState.update { state ->
+                    // 检查是否应该更新计时器显示
+                    val shouldUpdateTimer = (state.timerState is TimerState.Idle || 
+                                           state.timerState is TimerState.Completed) &&
+                                          state.selectedRoutineTask == null
+                    
+                    val newSettings = state.settings.copy(workDuration = duration)
+                    
+                    if (shouldUpdateTimer) {
+                        // 空闲状态且没有选择任务时，同步更新显示时间
+                        state.copy(
+                            settings = newSettings,
+                            totalSeconds = duration * 60,
+                            remainingSeconds = duration * 60
+                        )
+                    } else {
+                        // 运行/暂停状态或已选择任务时，只更新设置
+                        state.copy(settings = newSettings)
+                    }
+                }
             }
         }
         
         viewModelScope.launch {
             preferencesManager.pomodoroBreakDuration.collect { duration ->
-                _uiState.update { it.copy(
-                    settings = it.settings.copy(shortBreakDuration = duration)
-                )}
+                _uiState.update { state ->
+                    val newSettings = state.settings.copy(shortBreakDuration = duration)
+                    state.copy(settings = newSettings)
+                }
             }
         }
         
         viewModelScope.launch {
             preferencesManager.pomodoroLongBreakDuration.collect { duration ->
-                _uiState.update { it.copy(
-                    settings = it.settings.copy(longBreakDuration = duration)
-                )}
+                _uiState.update { state ->
+                    val newSettings = state.settings.copy(longBreakDuration = duration)
+                    state.copy(settings = newSettings)
+                }
             }
         }
         
@@ -129,6 +148,7 @@ class PomodoroViewModel @Inject constructor(
         
         val state = _uiState.value
         val duration = state.totalSeconds / 60
+        
         sessionStartTime = System.currentTimeMillis()
         
         viewModelScope.launch {
@@ -143,7 +163,9 @@ class PomodoroViewModel @Inject constructor(
             currentSessionId = pomodoroRepository.insertSession(session)
             
             _uiState.update { it.copy(
-                timerState = TimerState.Running(sessionStartTime)
+                timerState = TimerState.Running(sessionStartTime),
+                totalSeconds = duration * 60,
+                remainingSeconds = duration * 60
             )}
             
             startTimerLoop()
@@ -274,7 +296,7 @@ class PomodoroViewModel @Inject constructor(
                 pomodoroRepository.completeSession(sessionId)
             }
             
-            // 如果选择了日程任务，自动打卡
+            // 完成时打卡
             if (state.selectedRoutineTask != null) {
                 try {
                     val note = context.getString(R.string.pomodoro_checkin_note_complete)
@@ -296,6 +318,7 @@ class PomodoroViewModel @Inject constructor(
                 )}
             }
             
+            // 完成
             _uiState.update { it.copy(
                 timerState = TimerState.Completed(isEarlyFinish = false)
             )}
@@ -304,9 +327,11 @@ class PomodoroViewModel @Inject constructor(
     
     private fun resetTimer() {
         val state = _uiState.value
+        val duration = state.settings.workDuration
         _uiState.update { it.copy(
             timerState = TimerState.Idle,
-            remainingSeconds = state.totalSeconds,
+            totalSeconds = duration * 60,
+            remainingSeconds = duration * 60,
             selectedRoutineTask = null
         )}
         currentSessionId = null

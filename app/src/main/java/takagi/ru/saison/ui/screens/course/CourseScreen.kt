@@ -464,6 +464,7 @@ fun TimetableGrid(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(scrollState)
+            .padding(bottom = 88.dp) // 为浮动按钮留出空间
     ) {
         // Time Column
         Column(

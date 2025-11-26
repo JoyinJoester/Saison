@@ -22,7 +22,7 @@ import takagi.ru.saison.data.local.database.entity.CheckInRecordEntity
         SemesterEntity::class,
         SubscriptionEntity::class
     ],
-    version = 11,
+    version = 13,
     exportSchema = true
 )
 abstract class SaisonDatabase : RoomDatabase() {
@@ -222,6 +222,70 @@ abstract class SaisonDatabase : RoomDatabase() {
                 // Add autoRenewal column to subscriptions table with default value true
                 // to maintain existing behavior for current subscriptions
                 db.execSQL("ALTER TABLE subscriptions ADD COLUMN autoRenewal INTEGER NOT NULL DEFAULT 1")
+            }
+        }
+        
+        val MIGRATION_11_12 = object : Migration(11, 12) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 3.1, 3.2, 3.3
+                try {
+                    db.beginTransaction()
+                    
+                    // 1. 检查是否存在任何学期
+                    val cursor = db.query("SELECT COUNT(*) FROM semesters")
+                    cursor.moveToFirst()
+                    val semesterCount = cursor.getInt(0)
+                    cursor.close()
+                    
+                    if (semesterCount == 0) {
+                        // 2. 创建默认学期
+                        // Requirements: 1.2, 1.3, 1.4, 1.5
+                        val now = System.currentTimeMillis()
+                        
+                        // 计算当前周的周一
+                        val daysInMillis = 86400000L // 24 * 60 * 60 * 1000
+                        val currentDayOfWeek = ((now / daysInMillis + 4) % 7).toInt() // 0=Monday, 6=Sunday
+                        val mondayOffset = if (currentDayOfWeek == 0) 0 else currentDayOfWeek
+                        val startDate = now - (mondayOffset * daysInMillis)
+                        val endDate = startDate + (18 * 7 * daysInMillis) // 18 weeks
+                        
+                        db.execSQL("""
+                            INSERT INTO semesters (name, startDate, endDate, totalWeeks, isArchived, isDefault, createdAt, updatedAt)
+                            VALUES ('未命名学期', $startDate, $endDate, 18, 0, 1, $now, $now)
+                        """.trimIndent())
+                        
+                        // 获取新创建的学期ID
+                        val semesterIdCursor = db.query("SELECT last_insert_rowid()")
+                        semesterIdCursor.moveToFirst()
+                        val newSemesterId = semesterIdCursor.getLong(0)
+                        semesterIdCursor.close()
+                        
+                        // 3. 关联孤立课程到默认学期
+                        // Requirements: 3.1, 3.2, 3.3
+                        db.execSQL("""
+                            UPDATE courses 
+                            SET semesterId = $newSemesterId 
+                            WHERE semesterId NOT IN (SELECT id FROM semesters)
+                        """.trimIndent())
+                    }
+                    
+                    db.setTransactionSuccessful()
+                } catch (e: Exception) {
+                    // 记录错误但不抛出，避免阻塞应用启动
+                    android.util.Log.e("SaisonDatabase", "Migration 11->12 failed", e)
+                } finally {
+                    db.endTransaction()
+                }
+            }
+        }
+        
+        val MIGRATION_12_13 = object : Migration(12, 13) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Add cycle mode fields to pomodoro_sessions table
+                // Requirements: 6.1, 6.2, 6.3
+                db.execSQL("ALTER TABLE pomodoro_sessions ADD COLUMN sessionType TEXT NOT NULL DEFAULT 'WORK'")
+                db.execSQL("ALTER TABLE pomodoro_sessions ADD COLUMN cycleIndex INTEGER DEFAULT NULL")
+                db.execSQL("ALTER TABLE pomodoro_sessions ADD COLUMN sessionIndexInCycle INTEGER DEFAULT NULL")
             }
         }
     }
