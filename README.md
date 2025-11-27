@@ -1,6 +1,6 @@
 # 📅 Saison 任务管理应用
 
-**中文** | [English](README_EN.md)
+
 
 <div align="center">
 
