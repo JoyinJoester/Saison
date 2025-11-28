@@ -584,7 +584,6 @@
     <!-- ICS Import/Export -->
     <string name="import_courses">時間割をインポート</string>
     <string name="export_courses">時間割をエクスポート</string>
-    <string name="import_preview_title">インポートプレビュー</string>
     <string name="select_all">すべて選択</string>
     <string name="deselect_all">選択解除</string>
     <string name="duplicate_warning">重複する授業が検出されました</string>
@@ -648,7 +647,6 @@
     <string name="include_full_config_desc">時限設定、学期情報などの設定データをエクスポート</string>
     <string name="compatibility_mode_warning">互換モードは授業データのみをエクスポートし、アプリ固有の設定は含まれません</string>
     <string name="export_button">エクスポート</string>
-    <string name="export_success">エクスポート成功</string>
     <string name="export_error">エクスポート失敗：%s</string>
     <string name="export_in_progress">エクスポート中...</string>
     
@@ -672,7 +670,6 @@
     <string name="import_rename_new_semester">新しい学期の名前を変更</string>
     <string name="import_mode_add_only">新しい授業のみ追加</string>
     <string name="import_mode_replace_all">すべての授業を置換</string>
-    <string name="import_success">インポート成功：%1$d件の授業をインポート、%2$d件をスキップ</string>
     <string name="import_error">インポート失敗：%s</string>
     <string name="import_in_progress">インポート中...</string>
 
@@ -860,4 +857,83 @@
     <string name="plus_feature_themes_desc">8つの美しいテーマ：桜、ミント、アンバー、オーシャン、サンセット、フォレスト、オーロラ、レイン</string>
     
     <string name="subscription_skip_no_charge_hint">💡 スキップした期間は費用統計に含まれません</string>
+
+    <string name="export_deselect_all">すべて選択解除</string>
+    <string name="export_success">%1$d 項目を正常にエクスポートしました</string>
+    <string name="export_failed">エクスポート失敗：%1$s</string>
+    <string name="export_no_data_selected">少なくとも1つのデータタイプを選択してください</string>
+    
+    <!-- Import -->
+    <string name="import_title">インポート</string>
+    <string name="import_from_zip">ZIPからインポート</string>
+    <string name="import_from_json">JSONからインポート</string>
+    <string name="import_preview_title">インポートプレビュー</string>
+    <string name="import_confirm">インポート確認</string>
+    <string name="import_success">%1$d 項目をインポート、%2$d 個の重複をスキップしました</string>
+    <string name="import_failed">インポート失敗：%1$s</string>
+    <string name="import_total_items">合計項目数：%1$d</string>
+    <string name="import_new_items">新規項目：%1$d</string>
+    <string name="import_duplicate_items">重複：%1$d</string>
+
+    <string name="progress_title">お待ちください</string>
+    <string name="progress_loading">読み込み中…</string>
+    
+    <!-- Import Summary -->
+    <string name="local_import_summary_title">インポート完了</string>
+    <string name="local_import_summary_total">インポート合計</string>
+    <string name="local_import_summary_skipped">スキップ（重複）</string>
+    <string name="ok">OK</string>
+    
+    <!-- Errors -->
+    <string name="error_file_read">ファイルを読み取れません</string>
+    <string name="error_file_write">ファイルを書き込めません</string>
+    <string name="error_invalid_zip">無効なZIPファイル</string>
+    <string name="error_invalid_json">無効なJSONファイル</string>
+    <string name="error_unknown_data_type">不明なデータタイプ</string>
+    <string name="error_storage_full">ストレージ容量不足</string>
+
+    <!-- ローカルエクスポート/インポート -->
+    <string name="settings_section_data_sync">データ同期</string>
+    <string name="local_export_import_title">ローカルエクスポート/インポート</string>
+    <string name="local_export_import_subtitle">ローカルバックアップと復元</string>
+    <string name="local_export_tab">エクスポート</string>
+    <string name="local_import_tab">インポート</string>
+    <string name="local_export_title">データをエクスポート</string>
+    <string name="local_export_last_time">最終エクスポート：%s</string>
+    <string name="local_export_as_zip">ZIPとしてエクスポート</string>
+    <string name="local_export_as_json">JSONとしてエクスポート</string>
+    <string name="local_export_in_progress">エクスポート中…</string>
+    <string name="local_export_select_data_types">データタイプを選択</string>
+    <string name="local_export_select_all">すべて選択</string>
+    <string name="local_export_deselect_all">すべて解除</string>
+    <string name="local_export_item_count">%d 項目</string>
+    <string name="local_export_select_data_type">データタイプを選択</string>
+    <string name="local_import_title">データをインポート</string>
+    <string name="local_import_last_time">最終インポート：%s</string>
+    <string name="local_import_from_zip">ZIPからインポート</string>
+    <string name="local_import_from_json">JSONからインポート</string>
+    <string name="local_import_in_progress">インポート中…</string>
+    <string name="local_import_info_title">インポート情報</string>
+    <string name="local_import_info_description">以前にエクスポートしたZIPまたはJSONファイルからデータをインポートします。重複項目は自動的に検出されスキップされます。</string>
+    <string name="local_import_preview_title">インポートプレビュー</string>
+    <string name="local_import_preview_file_type">ファイルタイプ</string>
+    <string name="local_import_preview_zip_file">ZIPファイル</string>
+    <string name="local_import_preview_json_file">JSONファイル</string>
+    <string name="local_import_preview_summary">概要</string>
+    <string name="local_import_preview_total_items">合計項目数</string>
+    <string name="local_import_preview_new_items">新規項目</string>
+    <string name="local_import_preview_duplicate_items">重複項目</string>
+    <string name="local_import_preview_data_types">データタイプ</string>
+    <string name="local_import_preview_duplicate_warning">重複項目はスキップされます</string>
+    <string name="local_import_preview_confirm">インポート</string>
+    <string name="local_import_preview_cancel">キャンセル</string>
+    <string name="local_export_data_type_tasks">タスク</string>
+    <string name="local_export_data_type_courses">コース</string>
+    <string name="local_export_data_type_events">イベント</string>
+    <string name="local_export_data_type_routines">ルーティン</string>
+    <string name="local_export_data_type_subscriptions">サブスクリプション</string>
+    <string name="local_export_data_type_pomodoros">ポモドーロセッション</string>
+    <string name="local_export_data_type_semesters">学期</string>
+    <string name="local_export_data_type_preferences">設定</string>
+
 </resources>

@@ -230,7 +230,6 @@
     <string name="include_full_config_desc">Export period settings, semester info and other configuration data</string>
     <string name="compatibility_mode_warning">Compatibility mode only exports course data without app-specific configuration</string>
     <string name="export_button">Export</string>
-    <string name="export_success">Export successful</string>
     <string name="export_error">Export failed: %s</string>
     <string name="export_in_progress">Exporting...</string>
     
@@ -254,7 +253,6 @@
     <string name="import_rename_new_semester">Rename New Semester</string>
     <string name="import_mode_add_only">Add New Courses Only</string>
     <string name="import_mode_replace_all">Replace All Courses</string>
-    <string name="import_success">Import successful: %1$d courses imported, %2$d skipped</string>
     <string name="import_error">Import failed: %s</string>
     <string name="import_in_progress">Importing...</string>
     
@@ -648,7 +646,6 @@
     <string name="error_cannot_delete_current">Cannot delete current semester. Please switch to another semester first.</string>
     <string name="error_cannot_delete_last">Cannot delete the last semester.</string>
     <!-- Legacy ICS Import/Export strings - kept for compatibility -->
-    <string name="import_preview_title">Import Preview</string>
     <string name="select_all">Select All</string>
     <string name="deselect_all">Deselect All</string>
     <string name="duplicate_warning">Duplicate courses detected</string>
@@ -947,4 +944,62 @@
     <string name="plus_feature_themes_desc">8 beautiful themes: Sakura, Mint, Amber, Ocean, Sunset, Forest, Aurora, Rain</string>
     
     <string name="subscription_skip_no_charge_hint">💡 Skipped periods will not be counted in cost statistics</string>
+
+
+    <string name="export_no_data_selected">Please select at least one data type</string>
+
+    <string name="error_storage_full">Insufficient storage space</string>
+
+    <!-- Local Export/Import -->
+    <string name="settings_section_data_sync">Data Sync</string>
+    <string name="local_export_import_title">Local Export/Import</string>
+    <string name="local_export_import_subtitle">Local backup and restore</string>
+    <string name="local_export_tab">Export</string>
+    <string name="local_import_tab">Import</string>
+    <string name="local_export_title">Export Data</string>
+    <string name="local_export_last_time">Last export: %s</string>
+    <string name="local_export_as_zip">Export as ZIP</string>
+    <string name="local_export_as_json">Export as JSON</string>
+    <string name="local_export_in_progress">Exporting…</string>
+    <string name="local_export_select_data_types">Select Data Types</string>
+    <string name="local_export_select_all">Select All</string>
+    <string name="local_export_deselect_all">Deselect All</string>
+    <string name="local_export_item_count">%d items</string>
+    <string name="local_export_select_data_type">Select Data Type</string>
+    <string name="progress_title">Please Wait</string>
+    <string name="progress_loading">Loading…</string>
+    <string name="progress_exporting">Exporting...</string>
+    <string name="progress_importing">Importing...</string>
+    <string name="local_import_title">Import Data</string>
+    <string name="local_import_last_time">Last import: %s</string>
+    <string name="local_import_from_zip">Import from ZIP</string>
+    <string name="local_import_from_json">Import from JSON</string>
+    <string name="local_import_in_progress">Importing…</string>
+    <string name="local_import_info_title">Import Information</string>
+    <string name="local_import_info_description">Import data from previously exported ZIP or JSON files. Duplicate items will be automatically detected and skipped.</string>
+    <string name="local_import_preview_title">Import Preview</string>
+    <string name="local_import_preview_file_type">File Type</string>
+    <string name="local_import_preview_zip_file">ZIP File</string>
+    <string name="local_import_preview_json_file">JSON File</string>
+    <string name="local_import_preview_summary">Summary</string>
+    <string name="local_import_preview_total_items">Total Items</string>
+    <string name="local_import_preview_new_items">New Items</string>
+    <string name="local_import_preview_duplicate_items">Duplicate Items</string>
+    <string name="local_import_preview_data_types">Data Types</string>
+    <string name="local_import_preview_duplicate_warning">Duplicate items will be skipped</string>
+    <string name="local_import_preview_confirm">Import</string>
+    <string name="local_import_preview_cancel">Cancel</string>
+    <string name="local_import_summary_title">Import Summary</string>
+    <string name="local_import_summary_total">Total Imported</string>
+    <string name="local_import_summary_skipped">Skipped (Duplicates)</string>
+    <string name="ok">OK</string>
+    <string name="local_export_data_type_tasks">Tasks</string>
+    <string name="local_export_data_type_courses">Courses</string>
+    <string name="local_export_data_type_events">Events</string>
+    <string name="local_export_data_type_routines">Routines</string>
+    <string name="local_export_data_type_subscriptions">Subscriptions</string>
+    <string name="local_export_data_type_pomodoros">Pomodoro Sessions</string>
+    <string name="local_export_data_type_semesters">Semesters</string>
+    <string name="local_export_data_type_preferences">Preferences</string>
+
 </resources>

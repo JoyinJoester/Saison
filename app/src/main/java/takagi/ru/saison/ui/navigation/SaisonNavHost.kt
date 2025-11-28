@@ -253,6 +253,9 @@ fun SaisonNavHost(
                 onNavigateToWebDavBackup = {
                     navController.navigate("webdav_backup")
                 },
+                onNavigateToLocalExportImport = {
+                    navController.navigate("local_export_import")
+                },
                 onNavigateToSaisonPlus = {
                     navController.navigate(Screen.SaisonPlus.route)
                 }
@@ -288,6 +291,16 @@ fun SaisonNavHost(
         
         composable("webdav_backup") {
             takagi.ru.saison.ui.screens.settings.webdav.WebDavBackupSettingsScreen(
+                onNavigateBack = {
+                    if (navController.currentBackStackEntry != null) {
+                        navController.popBackStack()
+                    }
+                }
+            )
+        }
+        
+        composable("local_export_import") {
+            takagi.ru.saison.ui.screens.settings.local.LocalExportImportScreen(
                 onNavigateBack = {
                     if (navController.currentBackStackEntry != null) {
                         navController.popBackStack()

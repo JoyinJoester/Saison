@@ -44,9 +44,6 @@ fun NotificationSettingsScreen(
     val quickInputEnabled by viewModel.quickInputEnabled.collectAsState()
     val isPlusActivated by viewModel.isPlusActivated.collectAsState()
     
-    // Plus 限制对话框状态
-    var showPlusRequiredDialog by remember { mutableStateOf(false) }
-    
     // 检查系统通知权限
     var hasNotificationPermission by remember { 
         mutableStateOf(permissionManager.checkNotificationPermission()) 
@@ -173,18 +170,16 @@ fun NotificationSettingsScreen(
                 )
             }
             
-            // 快捷输入 (Plus 功能)
-            NotificationSettingsSection(title = stringResource(R.string.settings_quick_input_section)) {
-                NotificationSettingsSwitchItemWithPlus(
-                    icon = Icons.Default.Edit,
-                    title = stringResource(R.string.settings_quick_input_title),
-                    subtitle = stringResource(R.string.settings_quick_input_subtitle),
-                    checked = quickInputEnabled,
-                    enabled = notificationsEnabled && hasNotificationPermission && isPlusActivated,
-                    isPlusFeature = true,
-                    isPlusActivated = isPlusActivated,
-                    onCheckedChange = { enabled ->
-                        if (isPlusActivated) {
+            // 快捷输入 (Plus 功能 - 仅在激活后显示)
+            if (isPlusActivated) {
+                NotificationSettingsSection(title = stringResource(R.string.settings_quick_input_section)) {
+                    NotificationSettingsSwitchItem(
+                        icon = Icons.Default.Edit,
+                        title = stringResource(R.string.settings_quick_input_title),
+                        subtitle = stringResource(R.string.settings_quick_input_subtitle),
+                        checked = quickInputEnabled,
+                        enabled = notificationsEnabled && hasNotificationPermission,
+                        onCheckedChange = { enabled ->
                             viewModel.setQuickInputEnabled(enabled)
                             // 根据开关状态显示或关闭通知
                             if (enabled) {
@@ -192,24 +187,9 @@ fun NotificationSettingsScreen(
                             } else {
                                 quickInputManager.dismissQuickInputNotification()
                             }
-                        } else {
-                            showPlusRequiredDialog = true
                         }
-                    },
-                    onPlusClick = { showPlusRequiredDialog = true }
-                )
-            }
-            
-            // Plus 限制对话框
-            if (showPlusRequiredDialog) {
-                takagi.ru.saison.ui.components.PlusRequiredDialog(
-                    themeName = stringResource(R.string.settings_quick_input_title),
-                    onDismiss = { showPlusRequiredDialog = false },
-                    onNavigateToPlus = {
-                        showPlusRequiredDialog = false
-                        // 导航到 Plus 页面由外部处理
-                    }
-                )
+                    )
+                }
             }
         }
     }

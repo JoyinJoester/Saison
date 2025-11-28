@@ -42,6 +42,7 @@ fun SettingsScreen(
     onNavigateToBottomNavSettings: () -> Unit = {},
     onNavigateToNotificationSettings: () -> Unit = {},
     onNavigateToWebDavBackup: () -> Unit = {},
+    onNavigateToLocalExportImport: () -> Unit = {},
     onNavigateToSaisonPlus: () -> Unit = {},
     onNavigateToImportPreview: (android.net.Uri, Long) -> Unit = { _, _ -> },
     onNavigateToExport: () -> Unit = {},
@@ -160,9 +161,18 @@ fun SettingsScreen(
                 onClick = onNavigateToSaisonPlus
             )
             
-            // 同步设置 - 仅 Plus 会员可见，放在最上面
-            if (isPlusActivated) {
-                SettingsSection(title = stringResource(R.string.settings_section_sync)) {
+            // 数据与同步设置
+            SettingsSection(title = stringResource(R.string.settings_section_data_sync)) {
+                // 本地导出导入 - 所有用户可用
+                SettingsItem(
+                    icon = Icons.Default.ImportExport,
+                    title = stringResource(R.string.local_export_import_title),
+                    subtitle = stringResource(R.string.local_export_import_subtitle),
+                    onClick = onNavigateToLocalExportImport
+                )
+                
+                // WebDAV 备份 - 仅 Plus 会员可见
+                if (isPlusActivated) {
                     SettingsItem(
                         icon = Icons.Default.Backup,
                         title = "WebDAV 备份",

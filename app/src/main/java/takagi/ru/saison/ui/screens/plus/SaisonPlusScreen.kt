@@ -104,53 +104,39 @@ fun SaisonPlusScreen(
                         
                         Spacer(modifier = Modifier.height(16.dp))
                         
-                        // Plus开关
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = stringResource(R.string.plus_activation_title),
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Medium,
-                                    color = if (isPlusActivated) {
-                                        MaterialTheme.colorScheme.onPrimaryContainer
-                                    } else {
-                                        MaterialTheme.colorScheme.onSurfaceVariant
-                                    }
-                                )
-                                Text(
-                                    text = if (isPlusActivated) {
-                                        stringResource(R.string.plus_status_activated)
-                                    } else {
-                                        stringResource(R.string.plus_status_not_activated)
+                        // Plus开关 - 只在激活后显示
+                        if (isPlusActivated) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = stringResource(R.string.plus_activation_title),
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Medium,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                                    )
+                                    Text(
+                                        text = stringResource(R.string.plus_status_activated),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                                    )
+                                }
+                                
+                                Switch(
+                                    checked = true,
+                                    onCheckedChange = { checked ->
+                                        if (!checked) {
+                                            viewModel.deactivatePlus()
+                                        }
                                     },
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = if (isPlusActivated) {
-                                        MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
-                                    } else {
-                                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                                    }
+                                    enabled = !uiState.isLoading
                                 )
                             }
-                            
-                            Switch(
-                                checked = isPlusActivated,
-                                onCheckedChange = { checked ->
-                                    if (checked) {
-                                        viewModel.activatePlus()
-                                    } else {
-                                        viewModel.deactivatePlus()
-                                    }
-                                },
-                                enabled = !uiState.isLoading
-                            )
-                        }
-                        
-                        if (!isPlusActivated) {
-                            Spacer(modifier = Modifier.height(12.dp))
+                        } else {
+                            // 未激活时显示付款按钮
                             OutlinedButton(
                                 onClick = onNavigateToPayment,
                                 modifier = Modifier.fillMaxWidth()

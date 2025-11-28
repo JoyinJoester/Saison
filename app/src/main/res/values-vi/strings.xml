@@ -588,7 +588,6 @@
     <!-- ICS Import/Export -->
     <string name="import_courses">Nhập thời khóa biểu</string>
     <string name="export_courses">Xuất thời khóa biểu</string>
-    <string name="import_preview_title">Xem trước nhập</string>
     <string name="select_all">Chọn tất cả</string>
     <string name="deselect_all">Bỏ chọn tất cả</string>
     <string name="duplicate_warning">Phát hiện môn học trùng lặp</string>
@@ -652,7 +651,6 @@
     <string name="include_full_config_desc">Xuất cài đặt tiết học, thông tin học kỳ và dữ liệu cấu hình khác</string>
     <string name="compatibility_mode_warning">Chế độ tương thích chỉ xuất dữ liệu khóa học, không bao gồm cấu hình ứng dụng</string>
     <string name="export_button">Xuất</string>
-    <string name="export_success">Xuất thành công</string>
     <string name="export_error">Xuất thất bại: %s</string>
     <string name="export_in_progress">Đang xuất...</string>
     
@@ -676,7 +674,6 @@
     <string name="import_rename_new_semester">Đổi tên học kỳ mới</string>
     <string name="import_mode_add_only">Chỉ thêm khóa học mới</string>
     <string name="import_mode_replace_all">Thay thế tất cả khóa học</string>
-    <string name="import_success">Nhập thành công: đã nhập %1$d khóa học, bỏ qua %2$d</string>
     <string name="import_error">Nhập thất bại: %s</string>
     <string name="import_in_progress">Đang nhập...</string>
 
@@ -864,4 +861,80 @@
     <string name="plus_feature_themes_desc">8 chủ đề đẹp: Sakura, Mint, Amber, Ocean, Sunset, Forest, Aurora, Rain</string>
     
     <string name="subscription_skip_no_charge_hint">💡 Các khoảng thời gian bỏ qua sẽ không được tính vào thống kê chi phí</string>
+
+
+    
+    <!-- Import -->
+    <string name="import_title">Nhập</string>
+    <string name="import_from_zip">Nhập từ ZIP</string>
+    <string name="import_from_json">Nhập từ JSON</string>
+    <string name="import_preview_title">Xem Trước Nhập</string>
+    <string name="import_confirm">Xác Nhận Nhập</string>
+    <string name="import_success">Đã nhập %1$d mục, bỏ qua %2$d trùng lặp</string>
+    <string name="import_failed">Nhập thất bại: %1$s</string>
+    <string name="import_total_items">Tổng số mục: %1$d</string>
+    <string name="import_new_items">Mục mới: %1$d</string>
+    <string name="import_duplicate_items">Trùng lặp: %1$d</string>
+    
+    <string name="progress_title">Vui lòng đợi</string>
+    <string name="progress_loading">Đang tải…</string>
+    
+    <!-- Import Summary -->
+    <string name="local_import_summary_title">Nhập hoàn tất</string>
+    <string name="local_import_summary_total">Tổng số đã nhập</string>
+    <string name="local_import_summary_skipped">Đã bỏ qua (Trùng lặp)</string>
+    <string name="ok">OK</string>
+    
+    <!-- Errors -->
+    <string name="error_file_read">Không thể đọc tệp</string>
+    <string name="error_file_write">Không thể ghi tệp</string>
+    <string name="error_invalid_zip">Tệp ZIP không hợp lệ</string>
+    <string name="error_invalid_json">Tệp JSON không hợp lệ</string>
+    <string name="error_unknown_data_type">Loại dữ liệu không xác định</string>
+    <string name="error_storage_full">Không đủ dung lượng lưu trữ</string>
+
+    <!-- Xuất/Nhập cục bộ -->
+    <string name="settings_section_data_sync">Đồng bộ dữ liệu</string>
+    <string name="local_export_import_title">Xuất/Nhập cục bộ</string>
+    <string name="local_export_import_subtitle">Sao lưu và khôi phục cục bộ</string>
+    <string name="local_export_tab">Xuất</string>
+    <string name="local_import_tab">Nhập</string>
+    <string name="local_export_title">Xuất dữ liệu</string>
+    <string name="local_export_last_time">Lần xuất cuối：%s</string>
+    <string name="local_export_as_zip">Xuất dưới dạng ZIP</string>
+    <string name="local_export_as_json">Xuất dưới dạng JSON</string>
+    <string name="local_export_in_progress">Đang xuất…</string>
+    <string name="local_export_select_data_types">Chọn loại dữ liệu</string>
+    <string name="local_export_select_all">Chọn tất cả</string>
+    <string name="local_export_deselect_all">Bỏ chọn tất cả</string>
+    <string name="local_export_item_count">%d mục</string>
+    <string name="local_export_select_data_type">Chọn loại dữ liệu</string>
+    <string name="local_import_title">Nhập dữ liệu</string>
+    <string name="local_import_last_time">Lần nhập cuối：%s</string>
+    <string name="local_import_from_zip">Nhập từ ZIP</string>
+    <string name="local_import_from_json">Nhập từ JSON</string>
+    <string name="local_import_in_progress">Đang nhập…</string>
+    <string name="local_import_info_title">Thông tin nhập</string>
+    <string name="local_import_info_description">Nhập dữ liệu từ các tệp ZIP hoặc JSON đã xuất trước đó. Các mục trùng lặp sẽ tự động được phát hiện và bỏ qua.</string>
+    <string name="local_import_preview_title">Xem trước nhập</string>
+    <string name="local_import_preview_file_type">Loại tệp</string>
+    <string name="local_import_preview_zip_file">Tệp ZIP</string>
+    <string name="local_import_preview_json_file">Tệp JSON</string>
+    <string name="local_import_preview_summary">Tóm tắt</string>
+    <string name="local_import_preview_total_items">Tổng số mục</string>
+    <string name="local_import_preview_new_items">Mục mới</string>
+    <string name="local_import_preview_duplicate_items">Mục trùng lặp</string>
+    <string name="local_import_preview_data_types">Loại dữ liệu</string>
+    <string name="local_import_preview_duplicate_warning">Các mục trùng lặp sẽ bị bỏ qua</string>
+    <string name="local_import_preview_confirm">Nhập</string>
+    <string name="local_import_preview_cancel">Hủy</string>
+    <string name="local_export_data_type_tasks">Nhiệm vụ</string>
+    <string name="local_export_data_type_courses">Khóa học</string>
+    <string name="local_export_data_type_events">Sự kiện</string>
+    <string name="local_export_data_type_routines">Thói quen</string>
+    <string name="local_export_data_type_subscriptions">Đăng ký</string>
+    <string name="local_export_data_type_pomodoros">Phiên Pomodoro</string>
+    <string name="local_export_data_type_semesters">Học kỳ</string>
+    <string name="local_export_data_type_preferences">Tùy chọn</string>
+
 </resources>

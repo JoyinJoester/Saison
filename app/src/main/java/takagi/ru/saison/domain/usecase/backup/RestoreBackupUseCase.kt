@@ -112,13 +112,13 @@ class RestoreBackupUseCase @Inject constructor(
             // TODO: 导入偏好设置
             
             val summary = RestoreSummary(
-                tasksImported = tasksImported,
-                coursesImported = coursesImported,
-                eventsImported = eventsImported,
-                routinesImported = routinesImported,
-                subscriptionsImported = subscriptionsImported,
-                pomodoroSessionsImported = pomodoroSessionsImported,
-                semestersImported = semestersImported
+                importedTasks = tasksImported,
+                importedCourses = coursesImported,
+                importedEvents = eventsImported,
+                importedRoutines = routinesImported,
+                importedSubscriptions = subscriptionsImported,
+                importedPomodoroSessions = pomodoroSessionsImported,
+                importedSemesters = semestersImported
             )
             
             Result.success(summary)

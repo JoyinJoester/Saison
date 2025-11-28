@@ -593,7 +593,6 @@
     <string name="error_cannot_delete_current">无法删除当前学期。请先切换到其他学期。</string>
     <string name="error_cannot_delete_last">无法删除最后一个学期。</string>
     <!-- Legacy ICS Import/Export strings - kept for compatibility -->
-    <string name="import_preview_title">导入预览</string>
     <string name="select_all">全选</string>
     <string name="deselect_all">取消全选</string>
     <string name="duplicate_warning">检测到重复课程</string>
@@ -693,7 +692,6 @@
     <string name="include_full_config_desc">导出节次设置、学期信息等配置数据</string>
     <string name="compatibility_mode_warning">兼容模式仅导出课程数据，不包含应用特定配置</string>
     <string name="export_button">导出</string>
-    <string name="export_success">导出成功</string>
     <string name="export_error">导出失败：%s</string>
     <string name="export_in_progress">正在导出...</string>
     
@@ -717,7 +715,6 @@
     <string name="import_rename_new_semester">重命名新学期</string>
     <string name="import_mode_add_only">仅添加新课程</string>
     <string name="import_mode_replace_all">替换所有课程</string>
-    <string name="import_success">导入成功：已导入%1$d门课程，跳过%2$d门</string>
     <string name="import_error">导入失败：%s</string>
     <string name="import_in_progress">正在导入...</string>
 
@@ -921,4 +918,80 @@
     <string name="plus_feature_themes_desc">8 个精美主题：樱花、薄荷、琥珀、海洋、日落、森林、极光、雨季</string>
     
     <string name="subscription_skip_no_charge_hint">💡 跳过的时间段不会计入费用统计</string>
+
+
+    
+    <!-- Import -->
+    <string name="import_title">导入</string>
+    <string name="import_from_zip">从 ZIP 导入</string>
+    <string name="import_from_json">从 JSON 导入</string>
+    <string name="import_preview_title">导入预览</string>
+    <string name="import_confirm">确认导入</string>
+    <string name="import_success">导入 %1$d 项，跳过 %2$d 个重复项</string>
+    <string name="import_failed">导入失败：%1$s</string>
+    <string name="import_total_items">总项目数：%1$d</string>
+    <string name="import_new_items">新项目：%1$d</string>
+    <string name="import_duplicate_items">重复项：%1$d</string>
+    
+    <string name="progress_title">请稍候</string>
+    <string name="progress_loading">加载中…</string>
+    
+    <!-- Import Summary -->
+    <string name="local_import_summary_title">导入完成</string>
+    <string name="local_import_summary_total">总共导入</string>
+    <string name="local_import_summary_skipped">已跳过（重复项）</string>
+    <string name="ok">确定</string>
+    
+    <!-- Errors -->
+    <string name="error_file_read">无法读取文件</string>
+    <string name="error_file_write">无法写入文件</string>
+    <string name="error_invalid_zip">无效的 ZIP 文件</string>
+    <string name="error_invalid_json">无效的 JSON 文件</string>
+    <string name="error_unknown_data_type">未知的数据类型</string>
+    <string name="error_storage_full">存储空间不足</string>
+
+    <!-- 本地导出导入 -->
+    <string name="settings_section_data_sync">数据同步</string>
+    <string name="local_export_import_title">本地导出导入</string>
+    <string name="local_export_import_subtitle">本地备份与恢复</string>
+    <string name="local_export_tab">导出</string>
+    <string name="local_import_tab">导入</string>
+    <string name="local_export_title">导出数据</string>
+    <string name="local_export_last_time">上次导出：%s</string>
+    <string name="local_export_as_zip">导出为 ZIP</string>
+    <string name="local_export_as_json">导出为 JSON</string>
+    <string name="local_export_in_progress">正在导出…</string>
+    <string name="local_export_select_data_types">选择数据类型</string>
+    <string name="local_export_select_all">全选</string>
+    <string name="local_export_deselect_all">取消全选</string>
+    <string name="local_export_item_count">%d 项</string>
+    <string name="local_export_select_data_type">选择数据类型</string>
+    <string name="local_import_title">导入数据</string>
+    <string name="local_import_last_time">上次导入：%s</string>
+    <string name="local_import_from_zip">从 ZIP 导入</string>
+    <string name="local_import_from_json">从 JSON 导入</string>
+    <string name="local_import_in_progress">正在导入…</string>
+    <string name="local_import_info_title">导入说明</string>
+    <string name="local_import_info_description">从之前导出的 ZIP 或 JSON 文件导入数据。重复项将自动检测并跳过。</string>
+    <string name="local_import_preview_title">导入预览</string>
+    <string name="local_import_preview_file_type">文件类型</string>
+    <string name="local_import_preview_zip_file">ZIP 文件</string>
+    <string name="local_import_preview_json_file">JSON 文件</string>
+    <string name="local_import_preview_summary">摘要</string>
+    <string name="local_import_preview_total_items">总项目数</string>
+    <string name="local_import_preview_new_items">新项目</string>
+    <string name="local_import_preview_duplicate_items">重复项</string>
+    <string name="local_import_preview_data_types">数据类型</string>
+    <string name="local_import_preview_duplicate_warning">重复项将被跳过</string>
+    <string name="local_import_preview_confirm">导入</string>
+    <string name="local_import_preview_cancel">取消</string>
+    <string name="local_export_data_type_tasks">任务</string>
+    <string name="local_export_data_type_courses">课程</string>
+    <string name="local_export_data_type_events">事件</string>
+    <string name="local_export_data_type_routines">例行任务</string>
+    <string name="local_export_data_type_subscriptions">订阅</string>
+    <string name="local_export_data_type_pomodoros">番茄钟记录</string>
+    <string name="local_export_data_type_semesters">学期</string>
+    <string name="local_export_data_type_preferences">偏好设置</string>
+
 </resources>
