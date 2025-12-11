@@ -70,6 +70,14 @@ class DataImporter @Inject constructor(
         }
     }
     
+    fun importCategories(jsonString: String): List<CategoryBackupDto> {
+        return try {
+            json.decodeFromString<List<CategoryBackupDto>>(jsonString)
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+    
     fun importPreferences(jsonString: String): Map<String, Any> {
         return try {
             json.decodeFromString<Map<String, Any>>(jsonString)

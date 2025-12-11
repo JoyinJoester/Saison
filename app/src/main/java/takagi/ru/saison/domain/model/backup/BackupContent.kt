@@ -1,5 +1,6 @@
 package takagi.ru.saison.domain.model.backup
 
+import takagi.ru.saison.util.backup.CategoryBackupDto
 import takagi.ru.saison.domain.model.Course
 import takagi.ru.saison.domain.model.Event
 import takagi.ru.saison.domain.model.PomodoroSession
@@ -16,5 +17,6 @@ data class BackupContent(
     val subscriptions: List<Subscription> = emptyList(),
     val pomodoroSessions: List<PomodoroSession> = emptyList(),
     val semesters: List<Semester> = emptyList(),
-    val preferences: Map<String, Any> = emptyMap()
+    val preferences: Map<String, Any> = emptyMap(),
+    val categories: List<CategoryBackupDto> = emptyList()
 )

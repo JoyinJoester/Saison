@@ -16,19 +16,36 @@ import javax.inject.Inject
 @HiltViewModel
 class SubscriptionViewModel @Inject constructor(
     private val repository: SubscriptionRepository,
-    private val historyManager: takagi.ru.saison.util.SubscriptionHistoryManager
+    private val historyManager: takagi.ru.saison.util.SubscriptionHistoryManager,
+    private val categoryRepository: takagi.ru.saison.data.repository.CategoryRepository
 ) : ViewModel() {
 
     val subscriptions = repository.getAllSubscriptions()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
     
+    // 分类列表
+    val categories = categoryRepository.getAllCategories()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    
+    // 搜索查询
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
+    
     // 筛选模式
     private val _filterMode = MutableStateFlow(SubscriptionFilterMode.ALL)
     val filterMode: StateFlow<SubscriptionFilterMode> = _filterMode.asStateFlow()
     
+    // 选中的分类（用于筛选）
+    private val _selectedCategory = MutableStateFlow<String?>(null)
+    val selectedCategory: StateFlow<String?> = _selectedCategory.asStateFlow()
+    
+    // 上次选择的添加分类（用于记住用户选择）
+    private val _lastSelectedAddCategory = MutableStateFlow("默认")
+    val lastSelectedAddCategory: StateFlow<String> = _lastSelectedAddCategory.asStateFlow()
+    
     // 筛选后的订阅列表
-    val filteredSubscriptions = combine(subscriptions, _filterMode) { subs, mode ->
-        when (mode) {
+    val filteredSubscriptions = combine(subscriptions, _filterMode, _searchQuery, _selectedCategory) { subs, mode, query, category ->
+        var filtered = when (mode) {
             SubscriptionFilterMode.ALL -> subs
             SubscriptionFilterMode.ACTIVE -> subs.filter { it.isActive && !it.isPaused }
             SubscriptionFilterMode.OVERDUE -> subs.filter { 
@@ -37,6 +54,22 @@ class SubscriptionViewModel @Inject constructor(
             }
             SubscriptionFilterMode.PAUSED -> subs.filter { it.isPaused }
         }
+        
+        // 按分类筛选
+        if (category != null) {
+            filtered = filtered.filter { it.category == category }
+        }
+        
+        // 按搜索查询筛选
+        if (query.isNotBlank()) {
+            filtered = filtered.filter { subscription ->
+                subscription.name.contains(query, ignoreCase = true) ||
+                subscription.category.contains(query, ignoreCase = true) ||
+                subscription.note?.contains(query, ignoreCase = true) == true
+            }
+        }
+        
+        filtered
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
     
     // 统计数据
@@ -46,6 +79,57 @@ class SubscriptionViewModel @Inject constructor(
     
     fun setFilterMode(mode: SubscriptionFilterMode) {
         _filterMode.value = mode
+    }
+    
+    fun setSearchQuery(query: String) {
+        _searchQuery.value = query
+    }
+    
+    fun setSelectedCategory(category: String?) {
+        _selectedCategory.value = category
+    }
+    
+    fun setLastSelectedAddCategory(category: String) {
+        _lastSelectedAddCategory.value = category
+    }
+    
+    fun addCategory(name: String) {
+        viewModelScope.launch {
+            val category = takagi.ru.saison.data.local.database.entities.CategoryEntity(
+                name = name,
+                isDefault = false
+            )
+            categoryRepository.insertCategory(category)
+        }
+    }
+    
+    fun renameCategory(oldCategory: takagi.ru.saison.data.local.database.entities.CategoryEntity, newName: String) {
+        viewModelScope.launch {
+            // 1. 更新分类名称
+            val updatedCategory = oldCategory.copy(name = newName, updatedAt = System.currentTimeMillis())
+            categoryRepository.updateCategory(updatedCategory)
+            
+            // 2. 更新该分类下所有订阅的分类名称
+            val subsToUpdate = subscriptions.value.filter { it.category == oldCategory.name }
+            subsToUpdate.forEach { sub ->
+                val updatedSub = sub.copy(category = newName, updatedAt = System.currentTimeMillis())
+                repository.updateSubscription(updatedSub)
+            }
+        }
+    }
+    
+    fun deleteCategory(category: takagi.ru.saison.data.local.database.entities.CategoryEntity) {
+        viewModelScope.launch {
+            // 1. 将该分类下的所有订阅移动到"默认"分类
+            val subsToUpdate = subscriptions.value.filter { it.category == category.name }
+            subsToUpdate.forEach { sub ->
+                val updatedSub = sub.copy(category = "默认", updatedAt = System.currentTimeMillis())
+                repository.updateSubscription(updatedSub)
+            }
+            
+            // 2. 删除分类
+            categoryRepository.deleteCategory(category)
+        }
     }
 
     fun addSubscription(
@@ -266,6 +350,7 @@ class SubscriptionViewModel @Inject constructor(
         // 一次性购买统计
         var oneTimePurchaseValue = 0.0
         var oneTimePurchaseDailyValue = 0.0
+        var totalCost = 0.0
         
         subscriptions.forEach { sub ->
             val stats = calculateStats(sub)
@@ -285,14 +370,16 @@ class SubscriptionViewModel @Inject constructor(
             if (sub.cycleType != "ONE_TIME") {
                 totalDailyCost += stats.averageDailyCost
                 totalMonthlyCost += stats.averageMonthlyCost
+                totalCost += stats.accumulatedCost
             } else {
-                // 一次性购买：计算从购买日到今天的日均使用价值
+                // 一次性购买:计算从购买日到今天的日均使用价值
                 val startDate = Instant.ofEpochMilli(sub.startDate).atZone(ZoneId.systemDefault()).toLocalDate()
                 val daysSincePurchase = ChronoUnit.DAYS.between(startDate, today).coerceAtLeast(1)
                 val dailyValue = sub.price / daysSincePurchase
                 
                 oneTimePurchaseValue += sub.price
                 oneTimePurchaseDailyValue += dailyValue
+                totalCost += sub.price
             }
         }
         
@@ -304,7 +391,8 @@ class SubscriptionViewModel @Inject constructor(
             pausedCount = pausedCount,
             oneTimePurchaseTotalValue = oneTimePurchaseValue,
             oneTimePurchaseDailyValue = oneTimePurchaseDailyValue,
-            totalSubscriptions = subscriptions.size
+            totalSubscriptions = subscriptions.size,
+            totalCost = totalCost
         )
     }
 }
@@ -325,7 +413,8 @@ data class SubscriptionGlobalStats(
     val pausedCount: Int = 0,
     val oneTimePurchaseTotalValue: Double = 0.0,
     val oneTimePurchaseDailyValue: Double = 0.0,
-    val totalSubscriptions: Int = 0
+    val totalSubscriptions: Int = 0,
+    val totalCost: Double = 0.0
 )
 
 enum class SubscriptionFilterMode {

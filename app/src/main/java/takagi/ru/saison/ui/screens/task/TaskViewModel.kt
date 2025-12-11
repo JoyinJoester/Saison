@@ -57,15 +57,48 @@ class TaskViewModel @Inject constructor(
     // 当前选中的项目类型 - 任务页面始终显示 TASK
     private val _currentItemType = MutableStateFlow(takagi.ru.saison.domain.model.ItemType.TASK)
     val currentItemType: StateFlow<takagi.ru.saison.domain.model.ItemType> = _currentItemType.asStateFlow()
+
+    // Tags
+    val tags = taskRepository.getAllTags()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    private val _selectedTag = MutableStateFlow<takagi.ru.saison.domain.model.Tag?>(null)
+    val selectedTag = _selectedTag.asStateFlow()
+
+    fun setSelectedTag(tag: takagi.ru.saison.domain.model.Tag?) {
+        _selectedTag.value = tag
+    }
+
+    fun addTag(name: String) {
+        viewModelScope.launch {
+            taskRepository.addTag(name)
+        }
+    }
+
+    fun renameTag(tag: takagi.ru.saison.domain.model.Tag, newName: String) {
+        viewModelScope.launch {
+            taskRepository.renameTag(tag.id, newName)
+        }
+    }
+
+    fun deleteTag(tag: takagi.ru.saison.domain.model.Tag) {
+        viewModelScope.launch {
+            taskRepository.deleteTag(tag.id)
+            if (_selectedTag.value?.id == tag.id) {
+                _selectedTag.value = null
+            }
+        }
+    }
     
     // 任务列表 - 应用智能排序
     val tasks: StateFlow<List<Task>> = combine(
         filterMode,
         searchQuery,
-        sortMode
-    ) { filter, query, sort ->
-        Triple(filter, query, sort)
-    }.flatMapLatest { (filter, query, sort) ->
+        sortMode,
+        selectedTag
+    ) { filter, query, sort, tag ->
+        FilterParams(filter, query, sort, tag)
+    }.flatMapLatest { (filter, query, sort, tag) ->
         when {
             query.isNotEmpty() -> taskRepository.searchTasks(query)
             filter == TaskFilterMode.ALL -> taskRepository.getAllTasks()
@@ -74,12 +107,17 @@ class TaskViewModel @Inject constructor(
             filter == TaskFilterMode.FAVORITE -> taskRepository.getAllTasks().map { it.filter { task -> task.isFavorite } }
             else -> taskRepository.getAllTasks()
         }.map { taskList ->
+            var result = taskList
+            if (tag != null) {
+                result = result.filter { it.category?.id == tag.id }
+            }
+            
             when (sort) {
-                SortMode.SMART -> taskList.smartSort()
-                SortMode.DATE_ASC -> taskList.sortedBy { it.dueDate }
-                SortMode.DATE_DESC -> taskList.sortedByDescending { it.dueDate }
-                SortMode.PRIORITY -> taskList.sortedByDescending { it.priority.ordinal }
-                SortMode.TITLE -> taskList.sortedBy { it.title }
+                SortMode.SMART -> result.smartSort()
+                SortMode.DATE_ASC -> result.sortedBy { it.dueDate }
+                SortMode.DATE_DESC -> result.sortedByDescending { it.dueDate }
+                SortMode.PRIORITY -> result.sortedByDescending { it.priority.ordinal }
+                SortMode.TITLE -> result.sortedBy { it.title }
             }
         }
     }.catch { e ->
@@ -89,6 +127,13 @@ class TaskViewModel @Inject constructor(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = emptyList()
+    )
+
+    private data class FilterParams(
+        val filter: TaskFilterMode,
+        val query: String,
+        val sort: SortMode,
+        val tag: takagi.ru.saison.domain.model.Tag?
     )
     
     // 统计信息

@@ -2,6 +2,8 @@ package takagi.ru.saison.domain.usecase.backup
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import takagi.ru.saison.data.local.database.entities.CategoryEntity
+import takagi.ru.saison.data.repository.CategoryRepository
 import takagi.ru.saison.data.repository.CourseRepository
 import takagi.ru.saison.data.repository.PomodoroRepository
 import takagi.ru.saison.data.repository.RoutineRepository
@@ -23,7 +25,8 @@ class RestoreBackupUseCase @Inject constructor(
     private val routineRepository: RoutineRepository,
     private val subscriptionRepository: SubscriptionRepository,
     private val pomodoroRepository: PomodoroRepository,
-    private val semesterRepository: SemesterRepository
+    private val semesterRepository: SemesterRepository,
+    private val categoryRepository: CategoryRepository
 ) {
     
     suspend operator fun invoke(backupFile: BackupFile): Result<RestoreSummary> {
@@ -43,6 +46,7 @@ class RestoreBackupUseCase @Inject constructor(
             var subscriptionsImported = 0
             var pomodoroSessionsImported = 0
             var semestersImported = 0
+            var categoriesImported = 0
             
             // 导入任务（检测重复）
             withContext(Dispatchers.IO) {
@@ -99,12 +103,29 @@ class RestoreBackupUseCase @Inject constructor(
                     }
                 }
                 
-                // 导入学期（检测重复）
+                // 导入学期(检测重复)
                 content.semesters.forEach { semester ->
                     val exists = semesterRepository.getSemesterByIdSync(semester.id) != null
                     if (!exists) {
                         semesterRepository.insertSemester(semester)
                         semestersImported++
+                    }
+                }
+                
+                // 导入分类(检测重复)
+                content.categories.forEach { categoryDto ->
+                    val exists = categoryRepository.getCategoryById(categoryDto.id) != null
+                    if (!exists) {
+                        categoryRepository.insertCategory(
+                            CategoryEntity(
+                                id = categoryDto.id,
+                                name = categoryDto.name,
+                                isDefault = categoryDto.isDefault,
+                                createdAt = categoryDto.createdAt,
+                                updatedAt = categoryDto.updatedAt
+                            )
+                        )
+                        categoriesImported++
                     }
                 }
             }
@@ -118,7 +139,8 @@ class RestoreBackupUseCase @Inject constructor(
                 importedRoutines = routinesImported,
                 importedSubscriptions = subscriptionsImported,
                 importedPomodoroSessions = pomodoroSessionsImported,
-                importedSemesters = semestersImported
+                importedSemesters = semestersImported,
+                importedCategories = categoriesImported
             )
             
             Result.success(summary)

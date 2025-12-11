@@ -758,6 +758,7 @@
     <string name="subscription_more_action">More</string>
     <string name="subscription_add_action">Add Subscription</string>
     <string name="subscription_empty_message">No subscriptions yet, tap the button below to add one</string>
+    <string name="subscription_search_placeholder">Search subscriptions...</string>
     
     <!-- Subscription Card -->
     <string name="subscription_accumulated_prefix">Total</string>

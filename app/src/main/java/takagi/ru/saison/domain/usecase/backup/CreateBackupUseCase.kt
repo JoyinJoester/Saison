@@ -1,6 +1,7 @@
 package takagi.ru.saison.domain.usecase.backup
 
 import kotlinx.coroutines.flow.first
+import takagi.ru.saison.data.repository.CategoryRepository
 import takagi.ru.saison.data.repository.CourseRepository
 import takagi.ru.saison.data.repository.PomodoroRepository
 import takagi.ru.saison.data.repository.RoutineRepository
@@ -23,6 +24,7 @@ class CreateBackupUseCase @Inject constructor(
     private val subscriptionRepository: SubscriptionRepository,
     private val pomodoroRepository: PomodoroRepository,
     private val semesterRepository: SemesterRepository,
+    private val categoryRepository: CategoryRepository,
     private val dataExporter: DataExporter
 ) {
     
@@ -87,6 +89,13 @@ class CreateBackupUseCase @Inject constructor(
                 val semesters = semesterRepository.getAllSemesters().first()
                 android.util.Log.d("CreateBackupUseCase", "导出 ${semesters.size} 个学期")
                 files["semesters.json"] = dataExporter.exportSemesters(semesters)
+            }
+            
+            // 始终导出分类数据（用于订阅功能）
+            val categories = categoryRepository.getAllCategories().first()
+            if (categories.isNotEmpty()) {
+                android.util.Log.d("CreateBackupUseCase", "导出 ${categories.size} 个分类")
+                files["categories.json"] = dataExporter.exportCategories(categories)
             }
             
             if (preferences.includePreferences) {

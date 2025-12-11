@@ -55,16 +55,20 @@ fun TaskListScreen(
     val isCompletedExpanded by viewModel.isCompletedExpanded.collectAsState()
     val currentItemType by viewModel.currentItemType.collectAsState()
     val isInitialLoading by viewModel.isInitialLoading.collectAsState()
+    val tags by viewModel.tags.collectAsState()
+    val selectedTag by viewModel.selectedTag.collectAsState()
     
     var showNaturalLanguageDialog by remember { mutableStateOf(false) }
     var showFilterMenu by remember { mutableStateOf(false) }
     var showItemTypeSelector by remember { mutableStateOf(false) }
+    var showCategoryDrawer by remember { mutableStateOf(false) }
     
     // 分离已完成和未完成任务
     val (completedTasks, incompleteTasks) = remember(tasks) {
         tasks.partition { it.isCompleted }
     }
     
+    Box(modifier = modifier.fillMaxSize()) {
     Scaffold(
         contentWindowInsets = WindowInsets(0.dp),
         containerColor = MaterialTheme.colorScheme.background,
@@ -80,7 +84,7 @@ fun TaskListScreen(
                     currentItemType = currentItemType,
                     searchQuery = searchQuery,
                     onSearchQueryChange = { viewModel.setSearchQuery(it) },
-                    onFilterClick = { showFilterMenu = true },
+                    onFilterClick = { showCategoryDrawer = true },
                     onItemTypeSelectorClick = { showItemTypeSelector = true }
                 )
             }
@@ -100,7 +104,7 @@ fun TaskListScreen(
         }
     ) { paddingValues ->
         Box(
-            modifier = modifier
+            modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
@@ -429,6 +433,25 @@ fun TaskListScreen(
             else -> {}
         }
         }
+    }
+    
+    if (showCategoryDrawer) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            TaskCategoryDrawer(
+                visible = showCategoryDrawer,
+                categories = tags,
+                selectedCategory = selectedTag,
+                onDismiss = { showCategoryDrawer = false },
+                onCategorySelected = { tag ->
+                    viewModel.setSelectedTag(tag)
+                    showCategoryDrawer = false
+                },
+                onAddCategory = { name -> viewModel.addTag(name) },
+                onRenameCategory = { tag, newName -> viewModel.renameTag(tag, newName) },
+                onDeleteCategory = { tag -> viewModel.deleteTag(tag) }
+            )
+        }
+    }
     }
 }
 

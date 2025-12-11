@@ -4,6 +4,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material3.*
@@ -21,14 +22,22 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun AddSubscriptionSheet(
     existingSubscription: takagi.ru.saison.data.local.database.entities.SubscriptionEntity? = null,
+    categories: List<takagi.ru.saison.data.local.database.entities.CategoryEntity> = emptyList(),
+    lastSelectedCategory: String = "默认",
     onDismiss: () -> Unit,
-    onSave: (Long?, String, String, Double, String, Int, LocalDate, LocalDate?, String?, Boolean, Boolean, Int) -> Unit
+    onSave: (Long?, String, String, Double, String, Int, LocalDate, LocalDate?, String?, Boolean, Boolean, Int) -> Unit,
+    onAddCategory: (String) -> Unit
 ) {
     val isEditMode = existingSubscription != null
-    val defaultCategory = stringResource(R.string.subscription_default_category)
+    val defaultCategory = "默认"
     
     var name by remember { mutableStateOf(existingSubscription?.name ?: "") }
-    var category by remember { mutableStateOf(existingSubscription?.category ?: defaultCategory) }
+    // 如果是新建，使用上次选择的分类，如果上次选择的分类不存在（比如被删了），则使用默认
+    var category by remember { 
+        mutableStateOf(
+            existingSubscription?.category ?: if (categories.any { it.name == lastSelectedCategory }) lastSelectedCategory else defaultCategory
+        ) 
+    }
     var price by remember { mutableStateOf(existingSubscription?.price?.toString() ?: "") }
     var cycleType by remember { mutableStateOf(existingSubscription?.cycleType ?: "MONTHLY") }
     var cycleDuration by remember { mutableStateOf(existingSubscription?.cycleDuration?.toString() ?: "1") }
@@ -57,8 +66,8 @@ fun AddSubscriptionSheet(
     
     var showStartDatePicker by remember { mutableStateOf(false) }
     var showEndDatePicker by remember { mutableStateOf(false) }
-    var showCycleTypeDropdown by remember { mutableStateOf(false) }
     var dateValidationError by remember { mutableStateOf<String?>(null) }
+    var showAddCategoryDialog by remember { mutableStateOf(false) }
     
     val endDateErrorMessage = stringResource(R.string.subscription_end_date_error)
 
@@ -88,12 +97,64 @@ fun AddSubscriptionSheet(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            OutlinedTextField(
-                value = category,
-                onValueChange = { category = it },
-                label = { Text(stringResource(R.string.subscription_field_category)) },
+            // Category Dropdown
+            var categoryExpanded by remember { mutableStateOf(false) }
+            ExposedDropdownMenuBox(
+                expanded = categoryExpanded,
+                onExpandedChange = { categoryExpanded = !categoryExpanded },
                 modifier = Modifier.fillMaxWidth()
-            )
+            ) {
+                OutlinedTextField(
+                    value = category,
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text(stringResource(R.string.subscription_field_category)) },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryExpanded) },
+                    colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
+                    modifier = Modifier.fillMaxWidth().menuAnchor()
+                )
+                ExposedDropdownMenu(
+                    expanded = categoryExpanded,
+                    onDismissRequest = { categoryExpanded = false }
+                ) {
+                    // 默认分类选项
+                    DropdownMenuItem(
+                        text = { Text("默认") },
+                        onClick = { 
+                            category = "默认"
+                            categoryExpanded = false 
+                        }
+                    )
+                    
+                    // 显示所有非默认分类
+                    categories.filter { !it.isDefault && it.name != "默认" }.forEach { cat ->
+                        DropdownMenuItem(
+                            text = { Text(cat.name) },
+                            onClick = { 
+                                category = cat.name
+                                categoryExpanded = false 
+                            }
+                        )
+                    }
+                    
+                    HorizontalDivider()
+                    
+                    // 添加分类按钮
+                    DropdownMenuItem(
+                        text = { 
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("添加分类")
+                            }
+                        },
+                        onClick = { 
+                            showAddCategoryDialog = true
+                            categoryExpanded = false 
+                        }
+                    )
+                }
+            }
 
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 OutlinedTextField(
@@ -105,6 +166,7 @@ fun AddSubscriptionSheet(
                 )
                 
                 // Cycle Type Dropdown
+                var cycleTypeExpanded by remember { mutableStateOf(false) }
                 Box(modifier = Modifier.weight(1f)) {
                     val cycleTypeDisplayText = when(cycleType) {
                         "MONTHLY" -> stringResource(R.string.subscription_cycle_monthly)
@@ -112,34 +174,38 @@ fun AddSubscriptionSheet(
                         "YEARLY" -> stringResource(R.string.subscription_cycle_yearly)
                         else -> cycleType
                     }
-                    OutlinedTextField(
-                        value = cycleTypeDisplayText,
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text(stringResource(R.string.subscription_field_cycle_type)) },
-                        trailingIcon = {
-                            IconButton(onClick = { showCycleTypeDropdown = true }) {
-                                Icon(Icons.Default.ArrowDropDown, contentDescription = null)
-                            }
-                        },
+                    
+                    ExposedDropdownMenuBox(
+                        expanded = cycleTypeExpanded,
+                        onExpandedChange = { cycleTypeExpanded = !cycleTypeExpanded },
                         modifier = Modifier.fillMaxWidth()
-                    )
-                    DropdownMenu(
-                        expanded = showCycleTypeDropdown,
-                        onDismissRequest = { showCycleTypeDropdown = false }
                     ) {
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.subscription_cycle_monthly)) },
-                            onClick = { cycleType = "MONTHLY"; showCycleTypeDropdown = false }
+                        OutlinedTextField(
+                            value = cycleTypeDisplayText,
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text(stringResource(R.string.subscription_field_cycle_type)) },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = cycleTypeExpanded) },
+                            colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
+                            modifier = Modifier.fillMaxWidth().menuAnchor()
                         )
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.subscription_cycle_quarterly)) },
-                            onClick = { cycleType = "QUARTERLY"; showCycleTypeDropdown = false }
-                        )
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.subscription_cycle_yearly)) },
-                            onClick = { cycleType = "YEARLY"; showCycleTypeDropdown = false }
-                        )
+                        ExposedDropdownMenu(
+                            expanded = cycleTypeExpanded,
+                            onDismissRequest = { cycleTypeExpanded = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.subscription_cycle_monthly)) },
+                                onClick = { cycleType = "MONTHLY"; cycleTypeExpanded = false }
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.subscription_cycle_quarterly)) },
+                                onClick = { cycleType = "QUARTERLY"; cycleTypeExpanded = false }
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.subscription_cycle_yearly)) },
+                                onClick = { cycleType = "YEARLY"; cycleTypeExpanded = false }
+                            )
+                        }
                     }
                 }
             }
@@ -337,5 +403,42 @@ fun AddSubscriptionSheet(
         ) {
             DatePicker(state = datePickerState)
         }
+    }
+
+    // Add Category Dialog
+    if (showAddCategoryDialog) {
+        var newCategoryName by remember { mutableStateOf("") }
+        AlertDialog(
+            onDismissRequest = { showAddCategoryDialog = false },
+            title = { Text("添加新分类") },
+            text = {
+                OutlinedTextField(
+                    value = newCategoryName,
+                    onValueChange = { newCategoryName = it },
+                    label = { Text("分类名称") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        if (newCategoryName.isNotBlank()) {
+                            onAddCategory(newCategoryName)
+                            category = newCategoryName
+                            showAddCategoryDialog = false
+                        }
+                    },
+                    enabled = newCategoryName.isNotBlank()
+                ) {
+                    Text("添加")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showAddCategoryDialog = false }) {
+                    Text("取消")
+                }
+            }
+        )
     }
 }

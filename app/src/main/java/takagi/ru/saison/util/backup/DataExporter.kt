@@ -51,6 +51,11 @@ class DataExporter @Inject constructor(
         return json.encodeToString(dtos)
     }
     
+    fun exportCategories(categories: List<takagi.ru.saison.data.local.database.entities.CategoryEntity>): String {
+        val dtos = categories.map { it.toBackupDto() }
+        return json.encodeToString(dtos)
+    }
+    
     fun exportPreferences(preferences: Map<String, Any>): String {
         // 暂时返回空 JSON 对象，因为偏好设置导出尚未实现
         return "{}"
@@ -167,6 +172,14 @@ class DataExporter @Inject constructor(
         endDate = endDate.format(dateFormatter),
         totalWeeks = totalWeeks,
         isArchived = isArchived,
+        isDefault = isDefault,
+        createdAt = createdAt,
+        updatedAt = updatedAt
+    )
+    
+    private fun takagi.ru.saison.data.local.database.entities.CategoryEntity.toBackupDto() = CategoryBackupDto(
+        id = id,
+        name = name,
         isDefault = isDefault,
         createdAt = createdAt,
         updatedAt = updatedAt
@@ -291,6 +304,15 @@ data class SemesterBackupDto(
     val endDate: String,
     val totalWeeks: Int,
     val isArchived: Boolean,
+    val isDefault: Boolean,
+    val createdAt: Long,
+    val updatedAt: Long
+)
+
+@Serializable
+data class CategoryBackupDto(
+    val id: Long,
+    val name: String,
     val isDefault: Boolean,
     val createdAt: Long,
     val updatedAt: Long

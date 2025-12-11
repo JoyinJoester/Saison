@@ -48,7 +48,10 @@ interface TaskDao {
     fun searchTasks(query: String): Flow<List<TaskEntity>>
     
     @Query("SELECT * FROM tasks WHERE updatedAt > :timestamp")
-    suspend fun getModifiedSince(timestamp: Long): List<TaskEntity>
+    suspend fun getTasksUpdatedAfter(timestamp: Long): List<TaskEntity>
+
+    @Query("UPDATE tasks SET categoryId = :newCategoryId WHERE categoryId = :oldCategoryId")
+    suspend fun moveTasksToCategory(oldCategoryId: Long, newCategoryId: Long)
     
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(task: TaskEntity): Long

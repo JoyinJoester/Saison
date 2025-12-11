@@ -223,6 +223,42 @@ class TaskRepository @Inject constructor(
         )
         return tagDao.insert(newTag)
     }
+
+    fun getAllTags(): Flow<List<takagi.ru.saison.domain.model.Tag>> {
+        return tagDao.getAllTagsFlow().map { entities ->
+            entities.map { it.toDomain() }
+        }
+    }
+
+    suspend fun addTag(name: String): Long {
+        val newTag = takagi.ru.saison.data.local.database.entities.TagEntity(
+            name = name,
+            path = name,
+            parentId = null,
+            icon = null,
+            color = 0xFF6200EE.toInt()
+        )
+        return tagDao.insert(newTag)
+    }
+
+    suspend fun renameTag(tagId: Long, newName: String) {
+        val tag = tagDao.getTagById(tagId)
+        if (tag != null) {
+            val updatedTag = tag.copy(name = newName, path = newName)
+            tagDao.update(updatedTag)
+        }
+    }
+
+    suspend fun deleteTag(tagId: Long) {
+        val defaultTagId = getOrCreateDefaultCategory()
+        if (tagId == defaultTagId) return
+
+        // Move tasks to default category
+        taskDao.moveTasksToCategory(tagId, defaultTagId)
+        
+        // Delete tag
+        tagDao.deleteById(tagId)
+    }
 }
 
 // WidgetUpdateCoordinatorEntryPoint moved to WidgetEntryPoints.kt for centralized management

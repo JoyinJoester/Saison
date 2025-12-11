@@ -286,6 +286,7 @@ class WebDavBackupRepositoryImpl @Inject constructor(
             val subscriptions = extractedFiles["subscriptions.json"]?.let { dataImporter.importSubscriptions(it) } ?: emptyList()
             val pomodoroSessions = extractedFiles["pomodoro_sessions.json"]?.let { dataImporter.importPomodoroSessions(it) } ?: emptyList()
             val semesters = extractedFiles["semesters.json"]?.let { dataImporter.importSemesters(it) } ?: emptyList()
+            val categories = extractedFiles["categories.json"]?.let { dataImporter.importCategories(it) } ?: emptyList()
             val preferences = extractedFiles["preferences.json"]?.let { dataImporter.importPreferences(it) } ?: emptyMap()
             
             // 清理临时文件
@@ -299,6 +300,7 @@ class WebDavBackupRepositoryImpl @Inject constructor(
                 subscriptions = subscriptions,
                 pomodoroSessions = pomodoroSessions,
                 semesters = semesters,
+                categories = categories,
                 preferences = preferences
             )
             

@@ -746,6 +746,7 @@
     <string name="subscription_title">订阅列表</string>
     <string name="subscription_more_action">更多</string>
     <string name="subscription_add_action">添加订阅</string>
+    <string name="subscription_search_placeholder">搜索订阅...</string>
     <string name="subscription_empty_message">暂无订阅，点击右下角添加</string>
     
     <!-- 订阅卡片 -->

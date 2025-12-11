@@ -12,12 +12,15 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Category
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -81,19 +84,30 @@ fun SubscriptionScreen(
     val filteredSubscriptions by viewModel.filteredSubscriptions.collectAsState()
     val statistics by viewModel.statistics.collectAsState()
     val filterMode by viewModel.filterMode.collectAsState()
+    val categories by viewModel.categories.collectAsState()
+    val selectedCategory by viewModel.selectedCategory.collectAsState()
+    val searchQuery by viewModel.searchQuery.collectAsState()
+    val lastSelectedAddCategory by viewModel.lastSelectedAddCategory.collectAsState()
+    
     var showAddSheet by remember { mutableStateOf(false) }
     var subscriptionToEdit by remember { mutableStateOf<takagi.ru.saison.data.local.database.entities.SubscriptionEntity?>(null) }
+    var isSearchActive by remember { mutableStateOf(false) }
+    var showCategoryDrawer by remember { mutableStateOf(false) }
 
     Scaffold(
         contentWindowInsets = WindowInsets(0.dp),
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.subscription_title)) },
-                actions = {
-                    IconButton(onClick = { /* TODO: Filter or Sort */ }) {
-                        Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.subscription_more_action))
+            SubscriptionTopBar(
+                isSearchActive = isSearchActive,
+                searchQuery = searchQuery,
+                onSearchQueryChange = { viewModel.setSearchQuery(it) },
+                onSearchToggle = { 
+                    isSearchActive = !isSearchActive
+                    if (!isSearchActive) {
+                        viewModel.setSearchQuery("")
                     }
-                }
+                },
+                onFilterClick = { showCategoryDrawer = true }
             )
         },
         floatingActionButton = {
@@ -178,14 +192,44 @@ fun SubscriptionScreen(
     if (showAddSheet) {
         AddSubscriptionSheet(
             existingSubscription = subscriptionToEdit,
+            categories = categories,
+            lastSelectedCategory = lastSelectedAddCategory,
             onDismiss = { 
                 showAddSheet = false
                 subscriptionToEdit = null
             },
             onSave = { id, name, category, price, cycleType, duration, startDate, endDate, note, autoRenewal, reminderEnabled, reminderDaysBefore ->
                 viewModel.saveSubscription(id, name, category, price, cycleType, duration, startDate, endDate, note, autoRenewal, reminderEnabled, reminderDaysBefore)
+            },
+            onAddCategory = { categoryName ->
+                viewModel.addCategory(categoryName)
             }
         )
+    }
+    
+    // 分类筛选抽屉
+    if (showCategoryDrawer) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            CategoryDrawer(
+                visible = showCategoryDrawer,
+                categories = categories,
+                selectedCategory = selectedCategory,
+                onDismiss = { showCategoryDrawer = false },
+                onCategorySelected = { category ->
+                    viewModel.setSelectedCategory(category)
+                    showCategoryDrawer = false
+                },
+                onAddCategory = { categoryName ->
+                    viewModel.addCategory(categoryName)
+                },
+                onDeleteCategory = { category ->
+                    viewModel.deleteCategory(category)
+                },
+                onRenameCategory = { oldName, newName ->
+                    viewModel.renameCategory(oldName, newName)
+                }
+            )
+        }
     }
 }
 
@@ -572,11 +616,11 @@ fun SubscriptionStatsCard(statistics: SubscriptionGlobalStats) {
                     .background(MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.2f))
             )
             
-            // 一次性购买日均价值
+            // 总消费
             StatItem(
                 icon = Icons.Default.Category,
-                label = stringResource(R.string.subscription_stats_onetime_daily),
-                value = String.format("¥%.2f", statistics.oneTimePurchaseDailyValue)
+                label = "总消费",
+                value = String.format("¥%.2f", statistics.totalCost)
             )
             
             Box(
@@ -662,6 +706,58 @@ fun AnimatedCounter(
     Text(
         text = count,
         style = style
+    )
+}
+
+// 顶栏组件
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SubscriptionTopBar(
+    isSearchActive: Boolean,
+    searchQuery: String,
+    onSearchQueryChange: (String) -> Unit,
+    onSearchToggle: () -> Unit,
+    onFilterClick: () -> Unit
+) {
+    TopAppBar(
+        title = {
+            if (isSearchActive) {
+                TextField(
+                    value = searchQuery,
+                    onValueChange = onSearchQueryChange,
+                    placeholder = { Text(stringResource(R.string.subscription_search_placeholder)) },
+                    singleLine = true,
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = MaterialTheme.colorScheme.surface,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surface
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            } else {
+                Text(
+                    text = stringResource(R.string.subscription_title),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        },
+        actions = {
+            IconButton(onClick = onSearchToggle) {
+                Icon(
+                    imageVector = if (isSearchActive) Icons.Default.Close else Icons.Default.Search,
+                    contentDescription = if (isSearchActive) "关闭搜索" else "搜索"
+                )
+            }
+            IconButton(onClick = onFilterClick) {
+                Icon(
+                    imageVector = Icons.Default.FilterList,
+                    contentDescription = "筛选"
+                )
+            }
+        },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = MaterialTheme.colorScheme.background
+        )
     )
 }
 

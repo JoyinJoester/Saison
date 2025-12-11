@@ -21,9 +21,10 @@ import takagi.ru.saison.data.local.database.entity.CheckInRecordEntity
         CheckInRecordEntity::class,
         SemesterEntity::class,
         SubscriptionEntity::class,
-        SubscriptionHistoryEntity::class
+        SubscriptionHistoryEntity::class,
+        CategoryEntity::class
     ],
-    version = 14,
+    version = 15,
     exportSchema = true
 )
 abstract class SaisonDatabase : RoomDatabase() {
@@ -38,6 +39,7 @@ abstract class SaisonDatabase : RoomDatabase() {
     abstract fun semesterDao(): SemesterDao
     abstract fun subscriptionDao(): SubscriptionDao
     abstract fun subscriptionHistoryDao(): SubscriptionHistoryDao
+    abstract fun categoryDao(): CategoryDao
     
     companion object {
         const val DATABASE_NAME = "saison_database"
@@ -323,6 +325,36 @@ abstract class SaisonDatabase : RoomDatabase() {
                 db.execSQL("""
                     INSERT INTO subscription_history (subscriptionId, operationType, timestamp, description)
                     SELECT id, 'CREATED', createdAt, '订阅创建' FROM subscriptions
+                """)
+            }
+        }
+        
+        val MIGRATION_14_15 = object : Migration(14, 15) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // 创建分类表
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS categories (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        name TEXT NOT NULL,
+                        isDefault INTEGER NOT NULL DEFAULT 0,
+                        createdAt INTEGER NOT NULL,
+                        updatedAt INTEGER NOT NULL
+                    )
+                """)
+                
+                // 创建默认分类"全部订阅"
+                val now = System.currentTimeMillis()
+                db.execSQL("""
+                    INSERT INTO categories (name, isDefault, createdAt, updatedAt)
+                    VALUES ('全部订阅', 1, $now, $now)
+                """)
+                
+                // 从现有订阅中提取所有唯一的category值并创建分类
+                db.execSQL("""
+                    INSERT INTO categories (name, isDefault, createdAt, updatedAt)
+                    SELECT DISTINCT category, 0, $now, $now
+                    FROM subscriptions
+                    WHERE category NOT IN (SELECT name FROM categories)
                 """)
             }
         }
