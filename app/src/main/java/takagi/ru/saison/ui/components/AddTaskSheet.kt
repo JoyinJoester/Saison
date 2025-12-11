@@ -24,8 +24,11 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun AddTaskSheet(
     existingTask: takagi.ru.saison.domain.model.Task? = null,
+    tags: List<takagi.ru.saison.domain.model.Tag> = emptyList(),
+    lastSelectedTag: String? = null,
     onDismiss: () -> Unit,
-    onTaskAdd: (String, LocalDateTime?, Priority, List<String>, String, Boolean, Set<java.time.DayOfWeek>) -> Unit,
+    onTaskAdd: (String, LocalDateTime?, Priority, List<String>, String, Boolean, Set<java.time.DayOfWeek>, String?) -> Unit,
+    onAddTag: (String) -> Unit,
     parser: NaturalLanguageParser,
     modifier: Modifier = Modifier
 ) {
@@ -43,6 +46,10 @@ fun AddTaskSheet(
     var reminderEnabled by remember { mutableStateOf(existingTask?.reminderTime != null) }
     var showCustomRepeatDialog by remember { mutableStateOf(false) }
     var selectedWeekDays by remember { mutableStateOf(setOf<java.time.DayOfWeek>()) }
+    var selectedTag by remember { 
+        mutableStateOf(existingTask?.category?.name ?: lastSelectedTag)
+    }
+    var showAddTagDialog by remember { mutableStateOf(false) }
     
     // 实时解析标题输入（仅在非编辑模式下）
     LaunchedEffect(title) {
@@ -256,6 +263,67 @@ fun AddTaskSheet(
                             }
                         }
                     }
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            // 分类选择
+            var tagExpanded by remember { mutableStateOf(false) }
+            ExposedDropdownMenuBox(
+                expanded = tagExpanded,
+                onExpandedChange = { tagExpanded = !tagExpanded },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                OutlinedTextField(
+                    value = selectedTag ?: "无分类",
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("分类") },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = tagExpanded) },
+                    colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
+                    modifier = Modifier.fillMaxWidth().menuAnchor()
+                )
+                ExposedDropdownMenu(
+                    expanded = tagExpanded,
+                    onDismissRequest = { tagExpanded = false }
+                ) {
+                    // 无分类选项
+                    DropdownMenuItem(
+                        text = { Text("无分类") },
+                        onClick = { 
+                            selectedTag = null
+                            tagExpanded = false 
+                        }
+                    )
+                    
+                    // 显示所有分类
+                    tags.forEach { tag ->
+                        DropdownMenuItem(
+                            text = { Text(tag.name) },
+                            onClick = { 
+                                selectedTag = tag.name
+                                tagExpanded = false 
+                            }
+                        )
+                    }
+                    
+                    HorizontalDivider()
+                    
+                    // 添加分类按钮
+                    DropdownMenuItem(
+                        text = { 
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("添加分类")
+                            }
+                        },
+                        onClick = { 
+                            showAddTagDialog = true
+                            tagExpanded = false 
+                        }
+                    )
                 }
             }
             
@@ -581,7 +649,8 @@ fun AddTaskSheet(
                                 if (isEditMode) emptyList() else (parsedTask?.tags ?: emptyList()),
                                 selectedRepeatType,
                                 reminderEnabled,
-                                selectedWeekDays
+                                selectedWeekDays,
+                                selectedTag
                             )
                         }
                     },
@@ -697,6 +766,48 @@ fun AddTaskSheet(
                     selectedRepeatType = "不重复"
                 }
                 showCustomRepeatDialog = false
+            }
+        )
+    }
+    
+    // 添加分类对话框
+    if (showAddTagDialog) {
+        var newTagName by remember { mutableStateOf("") }
+        
+        AlertDialog(
+            onDismissRequest = { showAddTagDialog = false },
+            title = { Text("添加新分类") },
+            text = {
+                OutlinedTextField(
+                    value = newTagName,
+                    onValueChange = { newTagName = it },
+                    label = { Text("分类名称") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        if (newTagName.isNotBlank()) {
+                            onAddTag(newTagName.trim())
+                            selectedTag = newTagName.trim()
+                            showAddTagDialog = false
+                            newTagName = ""
+                        }
+                    },
+                    enabled = newTagName.isNotBlank()
+                ) {
+                    Text("添加")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { 
+                    showAddTagDialog = false
+                    newTagName = ""
+                }) {
+                    Text("取消")
+                }
             }
         )
     }

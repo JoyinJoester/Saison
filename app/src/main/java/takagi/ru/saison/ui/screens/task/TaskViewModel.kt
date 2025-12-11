@@ -180,11 +180,17 @@ class TaskViewModel @Inject constructor(
         tags: List<String>,
         repeatType: String = "不重复",
         reminderEnabled: Boolean = false,
-        weekDays: Set<java.time.DayOfWeek> = emptySet()
+        weekDays: Set<java.time.DayOfWeek> = emptySet(),
+        categoryName: String? = null
     ) {
         viewModelScope.launch {
             try {
                 val now = LocalDateTime.now()
+                
+                // 如果提供了分类名称，查找对应的Tag
+                val categoryTag = if (!categoryName.isNullOrBlank()) {
+                    taskRepository.getAllTags().firstOrNull()?.firstOrNull { it.name == categoryName }
+                } else null
                 
                 // 创建重复规则
                 val recurrenceRule = if (repeatType != "不重复") {
@@ -227,6 +233,7 @@ class TaskViewModel @Inject constructor(
                     dueDate = dueDateTime,
                     repeatRule = recurrenceRule,
                     reminderTime = reminderTime,
+                    category = categoryTag,
                     createdAt = now,
                     updatedAt = now
                 )

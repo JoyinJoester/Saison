@@ -390,10 +390,15 @@ fun TaskListScreen(
         // 添加任务Bottom Sheet
         if (showNaturalLanguageDialog) {
             takagi.ru.saison.ui.components.AddTaskSheet(
+                tags = tags,
+                lastSelectedTag = selectedTag?.name,
                 onDismiss = { showNaturalLanguageDialog = false },
-                onTaskAdd = { title, dueDateTime, priority, tags, repeatType, reminderEnabled, weekDays ->
-                    viewModel.createTask(title, dueDateTime, priority, tags, repeatType, reminderEnabled, weekDays)
+                onTaskAdd = { title, dueDateTime, priority, tags, repeatType, reminderEnabled, weekDays, categoryName ->
+                    viewModel.createTask(title, dueDateTime, priority, tags, repeatType, reminderEnabled, weekDays, categoryName)
                     showNaturalLanguageDialog = false
+                },
+                onAddTag = { tagName ->
+                    viewModel.addTag(tagName)
                 },
                 parser = takagi.ru.saison.util.NaturalLanguageParser()
             )
