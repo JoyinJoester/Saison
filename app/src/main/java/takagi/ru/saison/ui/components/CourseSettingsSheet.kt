@@ -47,9 +47,25 @@ fun CourseSettingsSheet(
     var showDatePicker by remember { mutableStateOf(false) }
     var showWeekNumberDialog by remember { mutableStateOf(false) }
     var currentWeekInput by remember { mutableStateOf("") }
+    var showPeriodEditDialog by remember { mutableStateOf(false) }
+    var editingPeriod by remember { mutableStateOf<CoursePeriod?>(null) }
+    var periodStartTime by remember { mutableStateOf(LocalTime.of(8, 0)) }
+    var periodEndTime by remember { mutableStateOf(LocalTime.of(8, 45)) }
+    var showUnsavedChangesDialog by remember { mutableStateOf(false) }
+    
+    // 检测是否有未保存的更改(排除学期开始日期,因为它会立即保存)
+    val hasUnsavedChanges = settings != currentSettings && 
+                           settings.copy(semesterStartDate = currentSettings.semesterStartDate) != 
+                           currentSettings.copy(semesterStartDate = currentSettings.semesterStartDate)
     
     ModalBottomSheet(
-        onDismissRequest = onDismiss,
+        onDismissRequest = {
+            if (hasUnsavedChanges) {
+                showUnsavedChangesDialog = true
+            } else {
+                onDismiss()
+            }
+        },
         modifier = modifier
     ) {
         Column(
@@ -69,7 +85,13 @@ fun CourseSettingsSheet(
                     text = "课程设置",
                     style = MaterialTheme.typography.titleLarge
                 )
-                IconButton(onClick = onDismiss) {
+                IconButton(onClick = {
+                    if (hasUnsavedChanges) {
+                        showUnsavedChangesDialog = true
+                    } else {
+                        onDismiss()
+                    }
+                }) {
                     Icon(
                         imageVector = Icons.Default.Close,
                         contentDescription = "关闭"
@@ -323,9 +345,21 @@ fun CourseSettingsSheet(
                     text = "时间预览",
                     style = MaterialTheme.typography.titleMedium
                 )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "点击时间段可单独调整",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
                 Spacer(modifier = Modifier.height(8.dp))
                 PeriodPreviewList(
                     periods = periods,
+                    onPeriodClick = { period ->
+                        editingPeriod = period
+                        periodStartTime = period.startTime
+                        periodEndTime = period.endTime
+                        showPeriodEditDialog = true
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .heightIn(max = 300.dp)
@@ -355,6 +389,8 @@ fun CourseSettingsSheet(
                 settings = settings.copy(firstPeriodStartTime = time)
                 selectedTemplateId = null
                 showTimePicker = false
+                // 立即保存第一节课开始时间
+                onSave(settings)
             }
         )
     }
@@ -419,6 +455,243 @@ fun CourseSettingsSheet(
                     showWeekNumberDialog = false
                     currentWeekInput = ""
                 }) {
+                    Text("取消")
+                }
+            }
+        )
+    }
+    
+    // 节次时间编辑对话框
+    if (showPeriodEditDialog && editingPeriod != null) {
+        PeriodTimeEditDialog(
+            period = editingPeriod!!,
+            initialStartTime = periodStartTime,
+            initialEndTime = periodEndTime,
+            onDismiss = { showPeriodEditDialog = false },
+            onConfirm = { startTime, endTime ->
+                // 计算时长并更新设置
+                val duration = java.time.Duration.between(startTime, endTime).toMinutes().toInt()
+                
+                // 如果是第一节课，更新开始时间
+                if (editingPeriod!!.periodNumber == 1) {
+                    settings = settings.copy(
+                        firstPeriodStartTime = startTime,
+                        periodDuration = duration
+                    )
+                } else {
+                    // 其他节次只更新时长
+                    settings = settings.copy(
+                        periodDuration = duration
+                    )
+                }
+                
+                selectedTemplateId = null
+                showPeriodEditDialog = false
+            }
+        )
+    }
+    
+    // 未保存更改提示对话框
+    if (showUnsavedChangesDialog) {
+        AlertDialog(
+            onDismissRequest = { showUnsavedChangesDialog = false },
+            title = { Text("未保存的更改") },
+            text = { Text("您有未保存的设置更改,是否要保存?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onSave(settings)
+                        showUnsavedChangesDialog = false
+                        onDismiss()
+                    }
+                ) {
+                    Text("保存")
+                }
+            },
+            dismissButton = {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TextButton(
+                        onClick = {
+                            showUnsavedChangesDialog = false
+                            onDismiss()
+                        }
+                    ) {
+                        Text("放弃")
+                    }
+                    TextButton(
+                        onClick = { showUnsavedChangesDialog = false }
+                    ) {
+                        Text("取消")
+                    }
+                }
+            }
+        )
+    }
+}
+
+/**
+ * 节次时间编辑对话框
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun PeriodTimeEditDialog(
+    period: CoursePeriod,
+    initialStartTime: LocalTime,
+    initialEndTime: LocalTime,
+    onDismiss: () -> Unit,
+    onConfirm: (LocalTime, LocalTime) -> Unit
+) {
+    var startTime by remember { mutableStateOf(initialStartTime) }
+    var endTime by remember { mutableStateOf(initialEndTime) }
+    var showStartTimePicker by remember { mutableStateOf(false) }
+    var showEndTimePicker by remember { mutableStateOf(false) }
+    
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("编辑第${period.periodNumber}节课时间") },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // 开始时间
+                OutlinedCard(
+                    onClick = { showStartTimePicker = true },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "开始时间",
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                        Text(
+                            text = startTime.format(DateTimeFormatter.ofPattern("HH:mm")),
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+                
+                // 结束时间
+                OutlinedCard(
+                    onClick = { showEndTimePicker = true },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "结束时间",
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                        Text(
+                            text = endTime.format(DateTimeFormatter.ofPattern("HH:mm")),
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+                
+                // 时长显示
+                val duration = java.time.Duration.between(startTime, endTime).toMinutes()
+                if (duration > 0) {
+                    Text(
+                        text = "课程时长: ${duration}分钟",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                } else {
+                    Text(
+                        text = "结束时间必须晚于开始时间",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onConfirm(startTime, endTime) },
+                enabled = endTime > startTime
+            ) {
+                Text("确定")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("取消")
+            }
+        }
+    )
+    
+    // 开始时间选择器
+    if (showStartTimePicker) {
+        val timePickerState = rememberTimePickerState(
+            initialHour = startTime.hour,
+            initialMinute = startTime.minute,
+            is24Hour = true
+        )
+        
+        AlertDialog(
+            onDismissRequest = { showStartTimePicker = false },
+            title = { Text("选择开始时间") },
+            text = {
+                TimePicker(state = timePickerState)
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        startTime = LocalTime.of(timePickerState.hour, timePickerState.minute)
+                        showStartTimePicker = false
+                    }
+                ) {
+                    Text("确定")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showStartTimePicker = false }) {
+                    Text("取消")
+                }
+            }
+        )
+    }
+    
+    // 结束时间选择器
+    if (showEndTimePicker) {
+        val timePickerState = rememberTimePickerState(
+            initialHour = endTime.hour,
+            initialMinute = endTime.minute,
+            is24Hour = true
+        )
+        
+        AlertDialog(
+            onDismissRequest = { showEndTimePicker = false },
+            title = { Text("选择结束时间") },
+            text = {
+                TimePicker(state = timePickerState)
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        endTime = LocalTime.of(timePickerState.hour, timePickerState.minute)
+                        showEndTimePicker = false
+                    }
+                ) {
+                    Text("确定")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showEndTimePicker = false }) {
                     Text("取消")
                 }
             }

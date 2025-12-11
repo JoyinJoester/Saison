@@ -19,6 +19,7 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun PeriodPreviewList(
     periods: List<CoursePeriod>,
+    onPeriodClick: ((CoursePeriod) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
@@ -27,7 +28,10 @@ fun PeriodPreviewList(
         contentPadding = PaddingValues(vertical = 8.dp)
     ) {
         items(periods) { period ->
-            PeriodPreviewItem(period = period)
+            PeriodPreviewItem(
+                period = period,
+                onClick = onPeriodClick?.let { { it(period) } }
+            )
             
             // 检查是否需要显示休息时段标识
             val currentIndex = periods.indexOf(period)
@@ -49,6 +53,7 @@ fun PeriodPreviewList(
 @Composable
 private fun PeriodPreviewItem(
     period: CoursePeriod,
+    onClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
@@ -61,7 +66,9 @@ private fun PeriodPreviewItem(
     }
     
     Card(
+        onClick = { onClick?.invoke() },
         modifier = modifier.fillMaxWidth(),
+        enabled = onClick != null,
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant
         )
