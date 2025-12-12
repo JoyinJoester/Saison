@@ -1,6 +1,7 @@
 package takagi.ru.saison.ui.screens.subscription
 
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.draggable
@@ -74,7 +75,7 @@ fun getCycleTypeText(cycleType: String): String {
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun SubscriptionScreen(
     onNavigateBack: () -> Unit = {},
@@ -100,6 +101,7 @@ fun SubscriptionScreen(
             SubscriptionTopBar(
                 isSearchActive = isSearchActive,
                 searchQuery = searchQuery,
+                selectedCategory = selectedCategory,
                 onSearchQueryChange = { viewModel.setSearchQuery(it) },
                 onSearchToggle = { 
                     isSearchActive = !isSearchActive
@@ -127,13 +129,13 @@ fun SubscriptionScreen(
                 bottom = 88.dp // 为浮动按钮留出空间
             )
         ) {
-            // 统计卡片 - 常驻显示
+            // 统计卡片 - 可滚动隐藏
             item {
                 SubscriptionStatsCard(statistics = statistics)
             }
             
-            // 筛选组件 - 常驻显示
-            item {
+            // 筛选组件 - 使用 stickyHeader 固定在顶部
+            stickyHeader {
                 SubscriptionFilterChips(
                     selectedMode = filterMode,
                     onModeSelected = { viewModel.setFilterMode(it) }
@@ -715,6 +717,7 @@ fun AnimatedCounter(
 private fun SubscriptionTopBar(
     isSearchActive: Boolean,
     searchQuery: String,
+    selectedCategory: String?,
     onSearchQueryChange: (String) -> Unit,
     onSearchToggle: () -> Unit,
     onFilterClick: () -> Unit
@@ -748,10 +751,19 @@ private fun SubscriptionTopBar(
                     contentDescription = if (isSearchActive) "关闭搜索" else "搜索"
                 )
             }
-            IconButton(onClick = onFilterClick) {
-                Icon(
-                    imageVector = Icons.Default.FilterList,
-                    contentDescription = "筛选"
+            Card(
+                onClick = onFilterClick,
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer
+                ),
+                modifier = Modifier.padding(end = 8.dp)
+            ) {
+                Text(
+                    text = selectedCategory ?: "全部",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
                 )
             }
         },
@@ -768,15 +780,19 @@ fun SubscriptionFilterChips(
     selectedMode: SubscriptionFilterMode,
     onModeSelected: (SubscriptionFilterMode) -> Unit
 ) {
-    SingleChoiceSegmentedButtonRow(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp)
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.background
     ) {
-        SegmentedButton(
-            selected = selectedMode == SubscriptionFilterMode.ALL,
-            onClick = { onModeSelected(SubscriptionFilterMode.ALL) },
-            shape = SegmentedButtonDefaults.itemShape(index = 0, count = 4)
+        SingleChoiceSegmentedButtonRow(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp)
+        ) {
+            SegmentedButton(
+                selected = selectedMode == SubscriptionFilterMode.ALL,
+                onClick = { onModeSelected(SubscriptionFilterMode.ALL) },
+                shape = SegmentedButtonDefaults.itemShape(index = 0, count = 4)
         ) {
             Text(stringResource(R.string.subscription_filter_all))
         }
@@ -804,6 +820,7 @@ fun SubscriptionFilterChips(
         ) {
             Text(stringResource(R.string.subscription_filter_paused))
         }
+    }
     }
 }
 

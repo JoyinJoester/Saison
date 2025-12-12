@@ -361,14 +361,22 @@ class TaskViewModel @Inject constructor(
         val now = LocalDateTime.now()
         val today = now.toLocalDate()
         
+        // 计算本周的开始和结束日期（周一到周日）
+        val dayOfWeek = today.dayOfWeek.value // 1=Monday, 7=Sunday
+        val thisWeekStart = today.minusDays((dayOfWeek - 1).toLong()) // 本周周一
+        val thisWeekEnd = thisWeekStart.plusDays(6) // 本周周日
+        val nextWeekEnd = thisWeekEnd.plusDays(7) // 下周周日
+        
         return tasks.groupBy { task ->
             when {
                 task.dueDate == null -> DateGroup.NoDate
                 task.dueDate.toLocalDate().isBefore(today) -> DateGroup.Overdue
                 task.dueDate.toLocalDate() == today -> DateGroup.Today
                 task.dueDate.toLocalDate() == today.plusDays(1) -> DateGroup.Tomorrow
-                task.dueDate.toLocalDate().isBefore(today.plusDays(7)) -> DateGroup.ThisWeek
-                task.dueDate.toLocalDate().isBefore(today.plusDays(14)) -> DateGroup.NextWeek
+                task.dueDate.toLocalDate().isAfter(today.plusDays(1)) && 
+                    !task.dueDate.toLocalDate().isAfter(thisWeekEnd) -> DateGroup.ThisWeek
+                task.dueDate.toLocalDate().isAfter(thisWeekEnd) && 
+                    !task.dueDate.toLocalDate().isAfter(nextWeekEnd) -> DateGroup.NextWeek
                 else -> DateGroup.Later
             }
         }.toSortedMap(compareBy { it.order })

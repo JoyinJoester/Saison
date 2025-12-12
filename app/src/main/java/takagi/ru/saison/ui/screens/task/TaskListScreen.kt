@@ -83,6 +83,7 @@ fun TaskListScreen(
                 TaskListTopBar(
                     currentItemType = currentItemType,
                     searchQuery = searchQuery,
+                    selectedTag = selectedTag,
                     onSearchQueryChange = { viewModel.setSearchQuery(it) },
                     onFilterClick = { showCategoryDrawer = true },
                     onItemTypeSelectorClick = { showItemTypeSelector = true }
@@ -108,95 +109,123 @@ fun TaskListScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-        Column(
-            modifier = Modifier.fillMaxSize()
-        ) {
-            // 统计卡片
-            val completionRate = remember(tasks) {
-                viewModel.calculateCompletionRate(tasks)
-            }
-            val todayCompletedCount = remember(tasks) {
-                viewModel.calculateTodayCompletedCount(tasks)
-            }
-            val favoriteCount = remember(tasks) {
-                tasks.count { it.isFavorite }
-            }
-            
-            TaskStatsCard(
-                incompleteCount = incompleteCount,
-                overdueCount = overdueCount,
-                completionRate = completionRate,
-                todayCompletedCount = todayCompletedCount,
-                favoriteCount = favoriteCount,
-                modifier = Modifier.padding(16.dp)
+        // 准备数据
+        val completionRate = remember(tasks) {
+            viewModel.calculateCompletionRate(tasks)
+        }
+        val todayCompletedCount = remember(tasks) {
+            viewModel.calculateTodayCompletedCount(tasks)
+        }
+        val favoriteCount = remember(tasks) {
+            tasks.count { it.isFavorite }
+        }
+        val taskCounts = remember(tasks) {
+            mapOf(
+                TaskFilterMode.ALL to tasks.size,
+                TaskFilterMode.ACTIVE to tasks.count { !it.isCompleted },
+                TaskFilterMode.COMPLETED to tasks.count { it.isCompleted },
+                TaskFilterMode.FAVORITE to tasks.count { it.isFavorite }
             )
-            
-            // 过滤器标签
-            val taskCounts = remember(tasks) {
-                mapOf(
-                    TaskFilterMode.ALL to tasks.size,
-                    TaskFilterMode.ACTIVE to tasks.count { !it.isCompleted },
-                    TaskFilterMode.COMPLETED to tasks.count { it.isCompleted },
-                    TaskFilterMode.FAVORITE to tasks.count { it.isFavorite }
-                )
-            }
-            
-            FilterChips(
-                selectedMode = filterMode,
-                onModeSelected = { viewModel.setFilterMode(it) },
-                taskCounts = taskCounts
-            )
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            // 任务列表
-            when {
-                isInitialLoading -> {
-                    // 初始加载状态 - 显示加载指示器而不是空状态
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator()
-                    }
+        }
+        
+        // 任务列表
+        when {
+            isInitialLoading -> {
+                // 初始加载状态 - 显示加载指示器而不是空状态
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
                 }
-                tasks.isEmpty() && searchQuery.isEmpty() -> {
+            }
+            tasks.isEmpty() && searchQuery.isEmpty() -> {
+                Column(modifier = Modifier.fillMaxSize()) {
+                    TaskStatsCard(
+                        incompleteCount = incompleteCount,
+                        overdueCount = overdueCount,
+                        completionRate = completionRate,
+                        todayCompletedCount = todayCompletedCount,
+                        favoriteCount = favoriteCount,
+                        modifier = Modifier.padding(16.dp)
+                    )
+                    FilterChips(
+                        selectedMode = filterMode,
+                        onModeSelected = { viewModel.setFilterMode(it) },
+                        taskCounts = taskCounts
+                    )
                     EmptyTaskList(
                         filterMode = filterMode,
                         onCreateTask = { showNaturalLanguageDialog = true }
                     )
                 }
-                tasks.isEmpty() && searchQuery.isNotEmpty() -> {
+            }
+            tasks.isEmpty() && searchQuery.isNotEmpty() -> {
+                Column(modifier = Modifier.fillMaxSize()) {
+                    TaskStatsCard(
+                        incompleteCount = incompleteCount,
+                        overdueCount = overdueCount,
+                        completionRate = completionRate,
+                        todayCompletedCount = todayCompletedCount,
+                        favoriteCount = favoriteCount,
+                        modifier = Modifier.padding(16.dp)
+                    )
+                    FilterChips(
+                        selectedMode = filterMode,
+                        onModeSelected = { viewModel.setFilterMode(it) },
+                        taskCounts = taskCounts
+                    )
                     EmptySearchResult(
                         query = searchQuery,
                         onClearSearch = { viewModel.setSearchQuery("") }
                     )
                 }
-                else -> {
-                    val listState = rememberLazyListState()
-                    val isFabVisible by remember {
-                        derivedStateOf {
-                            listState.firstVisibleItemIndex == 0
-                        }
+            }
+            else -> {
+                val listState = rememberLazyListState()
+                val isFabVisible by remember {
+                    derivedStateOf {
+                        listState.firstVisibleItemIndex == 0
                     }
-                    
-                    // 根据分组模式显示任务
-                    when (groupMode) {
-                        GroupMode.DATE -> {
-                            val groupedTasks = remember(tasks) {
-                                viewModel.groupTasksByDate(tasks)
+                }
+                
+                // 根据分组模式显示任务
+                when (groupMode) {
+                    GroupMode.DATE -> {
+                        val groupedTasks = remember(tasks) {
+                            viewModel.groupTasksByDate(tasks)
+                        }
+                        LazyColumn(
+                            state = listState,
+                            contentPadding = PaddingValues(
+                                start = 16.dp,
+                                end = 16.dp,
+                                bottom = 88.dp // 为浮动按钮留出空间
+                            ),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            // 统计卡片 - 可滚动隐藏
+                            item {
+                                TaskStatsCard(
+                                    incompleteCount = incompleteCount,
+                                    overdueCount = overdueCount,
+                                    completionRate = completionRate,
+                                    todayCompletedCount = todayCompletedCount,
+                                    favoriteCount = favoriteCount,
+                                    modifier = Modifier.padding(vertical = 8.dp)
+                                )
                             }
-                            LazyColumn(
-                                state = listState,
-                                contentPadding = PaddingValues(
-                                    start = 16.dp,
-                                    end = 16.dp,
-                                    top = 8.dp,
-                                    bottom = 88.dp // 为浮动按钮留出空间
-                                ),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                groupedTasks.forEach { (dateGroup, groupTasks) ->
+                            
+                            // 筛选菜单 - 使用 stickyHeader 固定在顶部
+                            stickyHeader {
+                                FilterChips(
+                                    selectedMode = filterMode,
+                                    onModeSelected = { viewModel.setFilterMode(it) },
+                                    taskCounts = taskCounts
+                                )
+                            }
+                            
+                            groupedTasks.forEach { (dateGroup, groupTasks) ->
                                     item(key = "header_${dateGroup.order}") {
                                         AnimatedVisibility(
                                             visible = true,
@@ -457,7 +486,6 @@ fun TaskListScreen(
             )
         }
     }
-    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -499,6 +527,7 @@ private fun MultiSelectTopBar(
 private fun TaskListTopBar(
     currentItemType: takagi.ru.saison.domain.model.ItemType,
     searchQuery: String,
+    selectedTag: takagi.ru.saison.domain.model.Tag?,
     onSearchQueryChange: (String) -> Unit,
     onFilterClick: () -> Unit,
     onItemTypeSelectorClick: () -> Unit
@@ -550,8 +579,20 @@ private fun TaskListTopBar(
                     contentDescription = stringResource(if (isSearchActive) R.string.cd_close_search else R.string.cd_search)
                 )
             }
-            IconButton(onClick = onFilterClick) {
-                Icon(Icons.Default.FilterList, contentDescription = stringResource(R.string.cd_filter))
+            Card(
+                onClick = onFilterClick,
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer
+                ),
+                modifier = Modifier.padding(end = 8.dp)
+            ) {
+                Text(
+                    text = selectedTag?.name ?: "全部",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                )
             }
         },
         colors = TopAppBarDefaults.topAppBarColors(
@@ -744,64 +785,69 @@ private fun FilterChips(
     modifier: Modifier = Modifier,
     taskCounts: Map<TaskFilterMode, Int> = emptyMap()
 ) {
-    SingleChoiceSegmentedButtonRow(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp)
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.background
     ) {
-        // 进行中
-        SegmentedButton(
-            selected = selectedMode == TaskFilterMode.ACTIVE,
-            onClick = { 
-                // 点击已选中的按钮则取消选择，显示全部
-                if (selectedMode == TaskFilterMode.ACTIVE) {
-                    onModeSelected(TaskFilterMode.ALL)
-                } else {
-                    onModeSelected(TaskFilterMode.ACTIVE)
-                }
-            },
-            shape = SegmentedButtonDefaults.itemShape(index = 0, count = 3),
-            icon = { 
-                SegmentedButtonDefaults.Icon(active = selectedMode == TaskFilterMode.ACTIVE)
-            }
+        SingleChoiceSegmentedButtonRow(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
-            Text(text = stringResource(R.string.task_filter_active))
-        }
-        
-        // 已完成
-        SegmentedButton(
-            selected = selectedMode == TaskFilterMode.COMPLETED,
-            onClick = { 
-                if (selectedMode == TaskFilterMode.COMPLETED) {
-                    onModeSelected(TaskFilterMode.ALL)
-                } else {
-                    onModeSelected(TaskFilterMode.COMPLETED)
+            // 进行中
+            SegmentedButton(
+                selected = selectedMode == TaskFilterMode.ACTIVE,
+                onClick = { 
+                    // 点击已选中的按钮则取消选择，显示全部
+                    if (selectedMode == TaskFilterMode.ACTIVE) {
+                        onModeSelected(TaskFilterMode.ALL)
+                    } else {
+                        onModeSelected(TaskFilterMode.ACTIVE)
+                    }
+                },
+                shape = SegmentedButtonDefaults.itemShape(index = 0, count = 3),
+                icon = { 
+                    SegmentedButtonDefaults.Icon(active = selectedMode == TaskFilterMode.ACTIVE)
                 }
-            },
-            shape = SegmentedButtonDefaults.itemShape(index = 1, count = 3),
-            icon = { 
-                SegmentedButtonDefaults.Icon(active = selectedMode == TaskFilterMode.COMPLETED)
+            ) {
+                Text(text = stringResource(R.string.task_filter_active))
             }
-        ) {
-            Text(text = stringResource(R.string.task_filter_completed))
-        }
-        
-        // 已标星
-        SegmentedButton(
-            selected = selectedMode == TaskFilterMode.FAVORITE,
-            onClick = { 
-                if (selectedMode == TaskFilterMode.FAVORITE) {
-                    onModeSelected(TaskFilterMode.ALL)
-                } else {
-                    onModeSelected(TaskFilterMode.FAVORITE)
+            
+            // 已完成
+            SegmentedButton(
+                selected = selectedMode == TaskFilterMode.COMPLETED,
+                onClick = { 
+                    if (selectedMode == TaskFilterMode.COMPLETED) {
+                        onModeSelected(TaskFilterMode.ALL)
+                    } else {
+                        onModeSelected(TaskFilterMode.COMPLETED)
+                    }
+                },
+                shape = SegmentedButtonDefaults.itemShape(index = 1, count = 3),
+                icon = { 
+                    SegmentedButtonDefaults.Icon(active = selectedMode == TaskFilterMode.COMPLETED)
                 }
-            },
-            shape = SegmentedButtonDefaults.itemShape(index = 2, count = 3),
-            icon = { 
-                SegmentedButtonDefaults.Icon(active = selectedMode == TaskFilterMode.FAVORITE)
+            ) {
+                Text(text = stringResource(R.string.task_filter_completed))
             }
-        ) {
-            Text(text = stringResource(R.string.task_filter_favorite))
+            
+            // 已标星
+            SegmentedButton(
+                selected = selectedMode == TaskFilterMode.FAVORITE,
+                onClick = { 
+                    if (selectedMode == TaskFilterMode.FAVORITE) {
+                        onModeSelected(TaskFilterMode.ALL)
+                    } else {
+                        onModeSelected(TaskFilterMode.FAVORITE)
+                    }
+                },
+                shape = SegmentedButtonDefaults.itemShape(index = 2, count = 3),
+                icon = { 
+                    SegmentedButtonDefaults.Icon(active = selectedMode == TaskFilterMode.FAVORITE)
+                }
+            ) {
+                Text(text = stringResource(R.string.task_filter_favorite))
+            }
         }
     }
 }
