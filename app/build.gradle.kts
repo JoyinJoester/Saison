@@ -154,9 +154,6 @@ dependencies {
     // Security
     implementation(libs.security.crypto)
 
-    // ML Kit
-    implementation(libs.mlkit.text.recognition)
-
     // Coil
     implementation(libs.coil.compose)
 

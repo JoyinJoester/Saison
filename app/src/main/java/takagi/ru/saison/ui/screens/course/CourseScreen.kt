@@ -70,6 +70,10 @@ fun CourseScreen(
     // 文件选择器 - 用于导入ICS文件
     val context = androidx.compose.ui.platform.LocalContext.current
     val coroutineScope = rememberCoroutineScope()
+    
+    // Snackbar支持（需要在launchers之前声明）
+    val snackbarHostState = remember { SnackbarHostState() }
+    
     val importLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri: Uri? ->
@@ -95,6 +99,27 @@ fun CourseScreen(
         }
     }
     
+    // CSV文件选择器
+    val csvPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri: Uri? ->
+        uri?.let {
+            coroutineScope.launch {
+                try {
+                    val courses = takagi.ru.saison.util.CourseCsvParser.parseFromUri(context, it, currentSemesterId ?: 1L)
+                    if (courses.isNotEmpty()) {
+                        viewModel.importCourses(courses)
+                        snackbarHostState.showSnackbar("成功导入 ${courses.size} 门课程")
+                    } else {
+                        snackbarHostState.showSnackbar("CSV 文件中没有有效的课程数据")
+                    }
+                } catch (e: Exception) {
+                    snackbarHostState.showSnackbar("CSV 导入失败: ${e.message}")
+                }
+            }
+        }
+    }
+    
     // 文件保存器 - 用于导出JSON文件（使用SAF）
     val exportLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/json")
@@ -108,9 +133,6 @@ fun CourseScreen(
             }
         }
     }
-    
-    // Snackbar支持
-    val snackbarHostState = remember { SnackbarHostState() }
     
     // 监听导出状态
     val exportState by viewModel.exportState.collectAsState()
@@ -192,7 +214,12 @@ fun CourseScreen(
                 onBackToCurrentWeek = { viewModel.goToCurrentWeek() },
                 onSettingsClick = { showSettingsSheet = true },
                 onSemesterSettingsClick = { showSemesterSettingsSheet = true },
-                onImportClick = { importLauncher.launch(arrayOf("text/calendar", "text/x-vcalendar", "*/*")) },
+                onCsvImportClick = {
+                    csvPickerLauncher.launch(arrayOf("text/csv", "text/comma-separated-values", "*/*"))
+                },
+                onIcsImportClick = {
+                    importLauncher.launch(arrayOf("text/calendar", "text/x-vcalendar", "*/*"))
+                },
                 onExportClick = {
                     // 显示导出对话框
                     viewModel.showExportDialog()
@@ -357,9 +384,12 @@ fun CourseHeader(
     onBackToCurrentWeek: () -> Unit,
     onSettingsClick: () -> Unit,
     onSemesterSettingsClick: () -> Unit,
-    onImportClick: () -> Unit,
+    onCsvImportClick: () -> Unit,
+    onIcsImportClick: () -> Unit,
     onExportClick: () -> Unit
 ) {
+    var showImportMenu by remember { mutableStateOf(false) }
+    
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -393,8 +423,36 @@ fun CourseHeader(
                 IconButton(onClick = onBackToCurrentWeek) {
                     Icon(Icons.Default.Today, contentDescription = "Today", tint = MaterialTheme.colorScheme.onSecondaryContainer)
                 }
-                IconButton(onClick = onImportClick) {
-                    Icon(Icons.Default.FileDownload, contentDescription = "Import", tint = MaterialTheme.colorScheme.onSecondaryContainer)
+                Box {
+                    IconButton(onClick = { showImportMenu = true }) {
+                        Icon(Icons.Default.FileDownload, contentDescription = "Import", tint = MaterialTheme.colorScheme.onSecondaryContainer)
+                    }
+                    
+                    DropdownMenu(
+                        expanded = showImportMenu,
+                        onDismissRequest = { showImportMenu = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("CSV 文件导入") },
+                            onClick = {
+                                showImportMenu = false
+                                onCsvImportClick()
+                            },
+                            leadingIcon = {
+                                Icon(Icons.Default.Description, contentDescription = null)
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("ICS 日历导入") },
+                            onClick = {
+                                showImportMenu = false
+                                onIcsImportClick()
+                            },
+                            leadingIcon = {
+                                Icon(Icons.Default.CalendarMonth, contentDescription = null)
+                            }
+                        )
+                    }
                 }
                 IconButton(onClick = onExportClick) {
                     Icon(Icons.Default.FileUpload, contentDescription = "Export", tint = MaterialTheme.colorScheme.onSecondaryContainer)

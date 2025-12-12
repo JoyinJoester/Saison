@@ -261,6 +261,24 @@ class CourseViewModel @Inject constructor(
         }
     }
     
+    /**
+     * 批量导入课程
+     */
+    fun importCourses(courses: List<Course>) {
+        viewModelScope.launch {
+            try {
+                android.util.Log.d("CourseViewModel", "Importing ${courses.size} courses")
+                courses.forEach { course ->
+                    courseRepository.insertCourse(course)
+                }
+                android.util.Log.d("CourseViewModel", "Successfully imported ${courses.size} courses")
+            } catch (e: Exception) {
+                android.util.Log.e("CourseViewModel", "Failed to import courses", e)
+                _uiState.value = CourseUiState.Error(e.message ?: "Failed to import courses")
+            }
+        }
+    }
+    
     fun updateCourse(course: Course) {
         viewModelScope.launch {
             try {

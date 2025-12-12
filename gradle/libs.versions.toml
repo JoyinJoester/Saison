@@ -42,9 +42,6 @@ glance = "1.1.0"
 # Security Crypto
 securityCrypto = "1.1.0-alpha06"
 
-# ML Kit
-mlkitTextRecognition = "16.0.1"
-
 # Coil
 coil = "2.7.0"
 
@@ -125,9 +122,6 @@ glance-material3 = { group = "androidx.glance", name = "glance-material3", versi
 
 # Security
 security-crypto = { group = "androidx.security", name = "security-crypto", version.ref = "securityCrypto" }
-
-# ML Kit
-mlkit-text-recognition = { group = "com.google.mlkit", name = "text-recognition", version.ref = "mlkitTextRecognition" }
 
 # Coil
 coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coil" }
