@@ -21,3 +21,6 @@ local.properties
 .kiro/
 docs/
 build/
+
+# Ignore release APKs
+app/release/*.apk
