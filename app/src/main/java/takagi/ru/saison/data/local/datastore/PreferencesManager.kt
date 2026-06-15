@@ -407,9 +407,10 @@ class PreferencesManager @Inject constructor(
         .map { preferences ->
             BottomNavVisibility(
                 course = preferences[PreferencesKeys.BOTTOM_NAV_COURSE] ?: true,
+                calendar = preferences[PreferencesKeys.BOTTOM_NAV_CALENDAR] ?: true,
                 tasks = preferences[PreferencesKeys.BOTTOM_NAV_TASKS] ?: true,
-                pomodoro = preferences[PreferencesKeys.BOTTOM_NAV_POMODORO] ?: false,  // 默认隐藏
-                subscription = preferences[PreferencesKeys.BOTTOM_NAV_SUBSCRIPTION] ?: false,  // 默认隐藏
+                pomodoro = preferences[PreferencesKeys.BOTTOM_NAV_POMODORO] ?: true,
+                subscription = preferences[PreferencesKeys.BOTTOM_NAV_SUBSCRIPTION] ?: true,
                 settings = preferences[PreferencesKeys.BOTTOM_NAV_SETTINGS] ?: true
             )
         }
@@ -424,9 +425,7 @@ class PreferencesManager @Inject constructor(
         dataStore.edit { preferences ->
             when (tab) {
                 BottomNavTab.COURSE -> preferences[PreferencesKeys.BOTTOM_NAV_COURSE] = visible
-                BottomNavTab.CALENDAR -> {
-                    // CALENDAR tab visibility is always true, cannot be changed
-                }
+                BottomNavTab.CALENDAR -> preferences[PreferencesKeys.BOTTOM_NAV_CALENDAR] = visible
                 BottomNavTab.TASKS -> preferences[PreferencesKeys.BOTTOM_NAV_TASKS] = visible
                 BottomNavTab.POMODORO -> preferences[PreferencesKeys.BOTTOM_NAV_POMODORO] = visible
                 BottomNavTab.SUBSCRIPTION -> preferences[PreferencesKeys.BOTTOM_NAV_SUBSCRIPTION] = visible

@@ -6,6 +6,7 @@ import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import takagi.ru.saison.data.repository.DefaultSemesterInitializer
 import takagi.ru.saison.ui.widget.CourseWidgetScheduler
@@ -149,21 +150,19 @@ class SaisonApplication : Application() {
      * 重新调度所有任务提醒
      */
     private suspend fun rescheduleAllTaskReminders() {
-        taskRepository.getAllTasks().collect { tasks ->
-            tasks.filter { !it.isCompleted && it.dueDate != null }.forEach { task ->
+        taskRepository.getAllTasks().first()
+            .filter { !it.isCompleted && (it.dueDate != null || it.reminderTime != null) }
+            .forEach { task ->
                 notificationManager.scheduleTaskReminder(task)
             }
-        }
     }
     
     /**
      * 重新调度所有课程提醒
      */
     private suspend fun rescheduleAllCourseReminders() {
-        courseRepository.getAllCourses().collect { courses ->
-            courses.forEach { course ->
-                notificationManager.scheduleCourseReminder(course)
-            }
+        courseRepository.getAllCourses().first().forEach { course ->
+            notificationManager.scheduleCourseReminder(course)
         }
     }
 }

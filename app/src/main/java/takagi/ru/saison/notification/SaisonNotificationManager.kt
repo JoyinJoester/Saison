@@ -48,11 +48,9 @@ class SaisonNotificationManager @Inject constructor(
         val taskRemindersEnabled = preferencesManager.taskRemindersEnabled.first()
         if (!taskRemindersEnabled) return
         
-        // 检查任务是否有截止时间
-        val dueDate = task.dueDate ?: return
-        
-        // 计算提醒时间（截止时间前1小时）
-        val reminderTime = dueDate.minusHours(1)
+        // 优先使用用户设置的提醒时间，没有则默认截止前1小时
+        val dueDate = task.dueDate
+        val reminderTime = task.reminderTime ?: dueDate?.minusHours(1) ?: return
         val triggerTime = reminderTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
         
         // 如果时间已过，不调度
@@ -82,7 +80,10 @@ class SaisonNotificationManager @Inject constructor(
      * @param taskId 任务ID
      */
     fun cancelTaskReminder(taskId: Long) {
-        scheduler.cancel("task_$taskId")
+        val notificationId = "task_$taskId"
+        scheduler.cancel(notificationId)
+        notificationManager.cancel(notificationId.hashCode())
+        notificationManager.cancel(taskId.toInt())
     }
     
     /**
@@ -125,7 +126,10 @@ class SaisonNotificationManager @Inject constructor(
      * @param courseId 课程ID
      */
     fun cancelCourseReminder(courseId: Long) {
-        scheduler.cancel("course_$courseId")
+        val notificationId = "course_$courseId"
+        scheduler.cancel(notificationId)
+        notificationManager.cancel(notificationId.hashCode())
+        notificationManager.cancel(courseId.toInt())
     }
     
     /**
@@ -161,8 +165,13 @@ class SaisonNotificationManager @Inject constructor(
      * @param sessionId 会话ID
      */
     fun cancelPomodoroReminder(sessionId: Long) {
-        scheduler.cancel("pomodoro_${sessionId}_work")
-        scheduler.cancel("pomodoro_${sessionId}_break")
+        val workNotificationId = "pomodoro_${sessionId}_work"
+        val breakNotificationId = "pomodoro_${sessionId}_break"
+        scheduler.cancel(workNotificationId)
+        scheduler.cancel(breakNotificationId)
+        notificationManager.cancel(workNotificationId.hashCode())
+        notificationManager.cancel(breakNotificationId.hashCode())
+        notificationManager.cancel(sessionId.toInt())
     }
     
     /**

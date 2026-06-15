@@ -28,7 +28,7 @@ fun AddTaskSheet(
     tags: List<takagi.ru.saison.domain.model.Tag> = emptyList(),
     lastSelectedTag: String? = null,
     onDismiss: () -> Unit,
-    onTaskAdd: (String, LocalDateTime?, Priority, List<String>, String, Boolean, Set<java.time.DayOfWeek>, String?) -> Unit,
+    onTaskAdd: (String, LocalDateTime?, Priority, List<String>, String, Boolean, Set<java.time.DayOfWeek>, String?, LocalDateTime?) -> Unit,
     onAddTag: (String) -> Unit,
     parser: NaturalLanguageParser,
     modifier: Modifier = Modifier
@@ -42,9 +42,12 @@ fun AddTaskSheet(
     var parsedTask by remember { mutableStateOf<ParsedTask?>(null) }
     var showDatePicker by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
+    var showReminderDatePicker by remember { mutableStateOf(false) }
+    var showReminderTimePicker by remember { mutableStateOf(false) }
     var showMoreOptions by remember { mutableStateOf(false) }
     var selectedRepeatType by remember { mutableStateOf("不重复") }
     var reminderEnabled by remember { mutableStateOf(existingTask?.reminderTime != null) }
+    var reminderTime by remember { mutableStateOf(existingTask?.reminderTime) }
     var showCustomRepeatDialog by remember { mutableStateOf(false) }
     var selectedWeekDays by remember { mutableStateOf(setOf<java.time.DayOfWeek>()) }
     var selectedTag by remember { 
@@ -138,7 +141,12 @@ fun AddTaskSheet(
                                 selectedRepeatType,
                                 reminderEnabled,
                                 selectedWeekDays,
-                                selectedTag
+                                selectedTag,
+                                if (reminderEnabled) {
+                                    reminderTime ?: selectedDate?.minusHours(1)
+                                } else {
+                                    null
+                                }
                             )
                         }
                     },
@@ -595,7 +603,13 @@ fun AddTaskSheet(
                             else 
                                 MaterialTheme.colorScheme.surfaceContainerLow
                         ),
-                        onClick = { reminderEnabled = !reminderEnabled }
+                        onClick = {
+                            val enabled = !reminderEnabled
+                            reminderEnabled = enabled
+                            if (enabled && reminderTime == null) {
+                                reminderTime = selectedDate?.minusHours(1) ?: LocalDateTime.now().plusHours(1)
+                            }
+                        }
                     ) {
                         Column(
                             modifier = Modifier
@@ -626,27 +640,50 @@ fun AddTaskSheet(
                                 }
                                 Switch(
                                     checked = reminderEnabled,
-                                    onCheckedChange = { reminderEnabled = it }
+                                    onCheckedChange = { enabled ->
+                                        reminderEnabled = enabled
+                                        if (enabled && reminderTime == null) {
+                                            reminderTime = selectedDate?.minusHours(1) ?: LocalDateTime.now().plusHours(1)
+                                        }
+                                    }
                                 )
                             }
                             if (reminderEnabled) {
+                                val effectiveReminderTime = reminderTime ?: selectedDate?.minusHours(1)
                                 Text(
-                                    text = if (selectedDate != null) {
-                                        if (selectedRepeatType != "不重复") {
-                                            "将在每次重复时提醒"
-                                        } else {
-                                            "将在 ${selectedDate!!.format(DateTimeFormatter.ofPattern("MM月dd日"))} 提醒"
-                                        }
+                                    text = if (effectiveReminderTime != null) {
+                                        "将在 ${effectiveReminderTime.format(DateTimeFormatter.ofPattern("MM月dd日 HH:mm"))} 提醒，并显示在日历中"
                                     } else {
-                                        if (selectedRepeatType != "不重复") {
-                                            "将在每次重复时提醒"
-                                        } else {
-                                            "将在任务当天提醒"
-                                        }
+                                        "请选择提醒时间"
                                     },
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    TextButton(
+                                        onClick = {
+                                            if (reminderTime == null) {
+                                                reminderTime = selectedDate?.minusHours(1)
+                                                    ?: LocalDateTime.now().plusHours(1)
+                                            }
+                                            showReminderDatePicker = true
+                                        }
+                                    ) {
+                                        Text("自定义提醒时间")
+                                    }
+                                    if (reminderTime != null) {
+                                        TextButton(
+                                            onClick = {
+                                                reminderTime = selectedDate?.minusHours(1)
+                                            }
+                                        ) {
+                                            Text("跟随截止前1小时")
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -738,6 +775,89 @@ fun AddTaskSheet(
             },
             dismissButton = {
                 TextButton(onClick = { showTimePicker = false }) {
+                    Text("取消")
+                }
+            },
+            text = {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    TimePicker(state = timePickerState)
+                }
+            }
+        )
+    }
+
+    if (showReminderDatePicker) {
+        val baseReminderTime = reminderTime ?: selectedDate?.minusHours(1) ?: LocalDateTime.now().plusHours(1)
+        val datePickerState = rememberDatePickerState(
+            initialSelectedDateMillis = baseReminderTime
+                .atZone(java.time.ZoneId.systemDefault())
+                .toInstant()
+                .toEpochMilli()
+        )
+
+        DatePickerDialog(
+            onDismissRequest = { showReminderDatePicker = false },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        datePickerState.selectedDateMillis?.let { millis ->
+                            val localDate = java.time.Instant.ofEpochMilli(millis)
+                                .atZone(java.time.ZoneId.systemDefault())
+                                .toLocalDate()
+                            val currentReminderTime = reminderTime
+                                ?: selectedDate?.minusHours(1)
+                                ?: LocalDateTime.now().plusHours(1)
+                            reminderTime = LocalDateTime.of(localDate, currentReminderTime.toLocalTime())
+                        }
+                        reminderEnabled = true
+                        showReminderDatePicker = false
+                        showReminderTimePicker = true
+                    }
+                ) {
+                    Text("确定")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showReminderDatePicker = false }) {
+                    Text("取消")
+                }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
+
+    if (showReminderTimePicker) {
+        val baseReminderTime = reminderTime ?: selectedDate?.minusHours(1) ?: LocalDateTime.now().plusHours(1)
+        val timePickerState = rememberTimePickerState(
+            initialHour = baseReminderTime.hour,
+            initialMinute = baseReminderTime.minute,
+            is24Hour = true
+        )
+
+        AlertDialog(
+            onDismissRequest = { showReminderTimePicker = false },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val currentReminderTime = reminderTime
+                            ?: selectedDate?.minusHours(1)
+                            ?: LocalDateTime.now().plusHours(1)
+                        reminderTime = currentReminderTime
+                            .withHour(timePickerState.hour)
+                            .withMinute(timePickerState.minute)
+                        reminderEnabled = true
+                        showReminderTimePicker = false
+                    }
+                ) {
+                    Text("确定")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showReminderTimePicker = false }) {
                     Text("取消")
                 }
             },

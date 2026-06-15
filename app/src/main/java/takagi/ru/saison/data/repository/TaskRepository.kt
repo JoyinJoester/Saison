@@ -1,6 +1,7 @@
 package takagi.ru.saison.data.repository
 
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import takagi.ru.saison.data.local.database.dao.TaskDao
 import takagi.ru.saison.data.local.database.dao.TagDao
@@ -17,7 +18,8 @@ class TaskRepository @Inject constructor(
     private val tagDao: TagDao,
     private val encryptionManager: EncryptionManager,
     @javax.inject.Named("applicationContext") private val context: android.content.Context,
-    private val notificationManager: takagi.ru.saison.notification.SaisonNotificationManager
+    private val notificationManager: takagi.ru.saison.notification.SaisonNotificationManager,
+    private val systemCalendarReminderManager: takagi.ru.saison.notification.SystemCalendarReminderManager
 ) {
     
     // Lazy inject to avoid circular dependency
@@ -98,10 +100,11 @@ class TaskRepository @Inject constructor(
         // Schedule notification if task has a due date
         try {
             val taskWithId = task.copy(id = result)
-            if (taskWithId.dueDate != null) {
+            if (taskWithId.dueDate != null || taskWithId.reminderTime != null) {
                 notificationManager.scheduleTaskReminder(taskWithId)
                 android.util.Log.d("TaskRepository", "Task reminder scheduled for task $result")
             }
+            systemCalendarReminderManager.upsertTaskReminder(taskWithId)
         } catch (e: Exception) {
             android.util.Log.e("TaskRepository", "Failed to schedule task reminder", e)
         }
@@ -124,11 +127,13 @@ class TaskRepository @Inject constructor(
         
         // Update notification if task has a due date, otherwise cancel it
         try {
-            if (task.dueDate != null && !task.isCompleted) {
+            if ((task.dueDate != null || task.reminderTime != null) && !task.isCompleted) {
                 notificationManager.scheduleTaskReminder(task)
+                systemCalendarReminderManager.upsertTaskReminder(task)
                 android.util.Log.d("TaskRepository", "Task reminder updated for task ${task.id}")
             } else {
                 notificationManager.cancelTaskReminder(task.id)
+                systemCalendarReminderManager.deleteTaskReminder(task.id)
                 android.util.Log.d("TaskRepository", "Task reminder cancelled for task ${task.id}")
             }
         } catch (e: Exception) {
@@ -148,6 +153,7 @@ class TaskRepository @Inject constructor(
         // Cancel notification before deleting task
         try {
             notificationManager.cancelTaskReminder(taskId)
+            systemCalendarReminderManager.deleteTaskReminder(taskId)
             android.util.Log.d("TaskRepository", "Task reminder cancelled for deleted task $taskId")
         } catch (e: Exception) {
             android.util.Log.e("TaskRepository", "Failed to cancel task reminder", e)
@@ -172,12 +178,14 @@ class TaskRepository @Inject constructor(
         try {
             if (isCompleted) {
                 notificationManager.cancelTaskReminder(taskId)
+                systemCalendarReminderManager.deleteTaskReminder(taskId)
                 android.util.Log.d("TaskRepository", "Task reminder cancelled for completed task $taskId")
             } else {
                 // Reschedule notification if task is uncompleted and has a due date
                 val task = getTaskById(taskId)
-                if (task?.dueDate != null) {
+                if (task != null && (task.dueDate != null || task.reminderTime != null)) {
                     notificationManager.scheduleTaskReminder(task)
+                    systemCalendarReminderManager.upsertTaskReminder(task)
                     android.util.Log.d("TaskRepository", "Task reminder rescheduled for uncompleted task $taskId")
                 }
             }
@@ -197,6 +205,14 @@ class TaskRepository @Inject constructor(
     suspend fun deleteCompletedTasksOlderThan(days: Int) {
         val timestamp = System.currentTimeMillis() - (days * 24 * 60 * 60 * 1000L)
         taskDao.deleteCompletedBefore(timestamp)
+    }
+
+    suspend fun syncSystemCalendarReminders() {
+        getAllTasks().first()
+            .filter { !it.isCompleted && it.reminderTime != null }
+            .forEach { task ->
+                systemCalendarReminderManager.upsertTaskReminder(task)
+            }
     }
     
     fun getIncompleteTaskCount(): Flow<Int> {

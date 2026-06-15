@@ -34,6 +34,8 @@ fun TaskDetailScreen(
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
+    var showReminderDatePicker by remember { mutableStateOf(false) }
+    var showReminderTimePicker by remember { mutableStateOf(false) }
     var showCustomRepeatDialog by remember { mutableStateOf(false) }
     var selectedRepeatType by remember { mutableStateOf("不重复") }
     var selectedWeekDays by remember { mutableStateOf(setOf<java.time.DayOfWeek>()) }
@@ -41,6 +43,10 @@ fun TaskDetailScreen(
     
     LaunchedEffect(taskId) {
         viewModel.loadTask(taskId)
+    }
+
+    LaunchedEffect(task?.id, task?.reminderTime) {
+        reminderEnabled = task?.reminderTime != null
     }
     
     task?.let { currentTask ->
@@ -419,13 +425,24 @@ fun TaskDetailScreen(
                                     else 
                                         MaterialTheme.colorScheme.surfaceContainerLow
                                 ),
-                                onClick = { reminderEnabled = !reminderEnabled }
+                                onClick = {
+                                    val enabled = !reminderEnabled
+                                    reminderEnabled = enabled
+                                    val reminderTime = if (enabled) {
+                                        currentTask.reminderTime
+                                            ?: currentTask.dueDate?.minusHours(1)
+                                            ?: LocalDateTime.now().plusHours(1)
+                                    } else {
+                                        null
+                                    }
+                                    viewModel.updateTask(currentTask.copy(reminderTime = reminderTime))
+                                }
                             ) {
                                 Column(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .padding(16.dp),
-                                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
                                     Row(
                                         modifier = Modifier.fillMaxWidth(),
@@ -450,27 +467,60 @@ fun TaskDetailScreen(
                                         }
                                         Switch(
                                             checked = reminderEnabled,
-                                            onCheckedChange = { reminderEnabled = it }
+                                            onCheckedChange = { enabled ->
+                                                reminderEnabled = enabled
+                                                val reminderTime = if (enabled) {
+                                                    currentTask.reminderTime
+                                                        ?: currentTask.dueDate?.minusHours(1)
+                                                        ?: LocalDateTime.now().plusHours(1)
+                                                } else {
+                                                    null
+                                                }
+                                                viewModel.updateTask(currentTask.copy(reminderTime = reminderTime))
+                                            }
                                         )
                                     }
                                     if (reminderEnabled) {
+                                        val effectiveReminderTime = currentTask.reminderTime
+                                            ?: currentTask.dueDate?.minusHours(1)
+                                            ?: LocalDateTime.now().plusHours(1)
                                         Text(
-                                            text = if (currentTask.dueDate != null) {
-                                                if (selectedRepeatType != "不重复") {
-                                                    "将在每次重复时提醒"
-                                                } else {
-                                                    "将在 ${currentTask.dueDate!!.format(DateTimeFormatter.ofPattern("MM月dd日"))} 提醒"
-                                                }
-                                            } else {
-                                                if (selectedRepeatType != "不重复") {
-                                                    "将在每次重复时提醒"
-                                                } else {
-                                                    "将在任务当天提醒"
-                                                }
-                                            },
+                                            text = "将在 ${effectiveReminderTime.format(DateTimeFormatter.ofPattern("MM月dd日 HH:mm"))} 提醒，并显示在日历中",
                                             style = MaterialTheme.typography.bodySmall,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            OutlinedButton(
+                                                onClick = { showReminderDatePicker = true },
+                                                modifier = Modifier.weight(1f)
+                                            ) {
+                                                Icon(
+                                                    Icons.Outlined.CalendarMonth,
+                                                    contentDescription = null,
+                                                    modifier = Modifier.size(18.dp)
+                                                )
+                                                Spacer(modifier = Modifier.width(4.dp))
+                                                Text("自定义时间")
+                                            }
+                                            if (currentTask.dueDate != null) {
+                                                TextButton(
+                                                    onClick = {
+                                                        val dueDate = currentTask.dueDate
+                                                        viewModel.updateTask(
+                                                            currentTask.copy(
+                                                                reminderTime = dueDate.minusHours(1)
+                                                            )
+                                                        )
+                                                    },
+                                                    modifier = Modifier.weight(1f)
+                                                ) {
+                                                    Text("截止前1小时")
+                                                }
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -614,8 +664,9 @@ fun TaskDetailScreen(
                                     .atZone(java.time.ZoneId.systemDefault())
                                     .toLocalDate()
                                 
-                                val newDateTime = if (currentTask.dueDate != null) {
-                                    LocalDateTime.of(localDate, currentTask.dueDate!!.toLocalTime())
+                                val dueDate = currentTask.dueDate
+                                val newDateTime = if (dueDate != null) {
+                                    LocalDateTime.of(localDate, dueDate.toLocalTime())
                                 } else {
                                     LocalDateTime.of(localDate, java.time.LocalTime.of(23, 59))
                                 }
@@ -653,8 +704,9 @@ fun TaskDetailScreen(
                 confirmButton = {
                     TextButton(
                         onClick = {
-                            val newDateTime = if (currentTask.dueDate != null) {
-                                currentTask.dueDate!!.withHour(timePickerState.hour)
+                            val dueDate = currentTask.dueDate
+                            val newDateTime = if (dueDate != null) {
+                                dueDate.withHour(timePickerState.hour)
                                     .withMinute(timePickerState.minute)
                             } else {
                                 LocalDateTime.now()
@@ -670,6 +722,98 @@ fun TaskDetailScreen(
                 },
                 dismissButton = {
                     TextButton(onClick = { showTimePicker = false }) {
+                        Text("取消")
+                    }
+                },
+                text = {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        TimePicker(state = timePickerState)
+                    }
+                }
+            )
+        }
+    }
+
+    if (showReminderDatePicker) {
+        task?.let { currentTask ->
+            val baseReminderTime = currentTask.reminderTime
+                ?: currentTask.dueDate?.minusHours(1)
+                ?: LocalDateTime.now().plusHours(1)
+            val datePickerState = rememberDatePickerState(
+                initialSelectedDateMillis = baseReminderTime
+                    .atZone(java.time.ZoneId.systemDefault())
+                    .toInstant()
+                    .toEpochMilli()
+            )
+
+            DatePickerDialog(
+                onDismissRequest = { showReminderDatePicker = false },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            datePickerState.selectedDateMillis?.let { millis ->
+                                val localDate = java.time.Instant.ofEpochMilli(millis)
+                                    .atZone(java.time.ZoneId.systemDefault())
+                                    .toLocalDate()
+                                val currentReminderTime = currentTask.reminderTime ?: baseReminderTime
+                                val newReminderTime = LocalDateTime.of(
+                                    localDate,
+                                    currentReminderTime.toLocalTime()
+                                )
+                                reminderEnabled = true
+                                viewModel.updateTask(currentTask.copy(reminderTime = newReminderTime))
+                            }
+                            showReminderDatePicker = false
+                            showReminderTimePicker = true
+                        }
+                    ) {
+                        Text("确定")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showReminderDatePicker = false }) {
+                        Text("取消")
+                    }
+                }
+            ) {
+                DatePicker(state = datePickerState)
+            }
+        }
+    }
+
+    if (showReminderTimePicker) {
+        task?.let { currentTask ->
+            val baseReminderTime = currentTask.reminderTime
+                ?: currentTask.dueDate?.minusHours(1)
+                ?: LocalDateTime.now().plusHours(1)
+            val timePickerState = rememberTimePickerState(
+                initialHour = baseReminderTime.hour,
+                initialMinute = baseReminderTime.minute,
+                is24Hour = true
+            )
+
+            AlertDialog(
+                onDismissRequest = { showReminderTimePicker = false },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            val currentReminderTime = currentTask.reminderTime ?: baseReminderTime
+                            val newReminderTime = currentReminderTime
+                                .withHour(timePickerState.hour)
+                                .withMinute(timePickerState.minute)
+                            reminderEnabled = true
+                            viewModel.updateTask(currentTask.copy(reminderTime = newReminderTime))
+                            showReminderTimePicker = false
+                        }
+                    ) {
+                        Text("确定")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showReminderTimePicker = false }) {
                         Text("取消")
                     }
                 },

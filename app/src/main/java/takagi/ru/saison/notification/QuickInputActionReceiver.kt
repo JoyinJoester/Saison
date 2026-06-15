@@ -32,7 +32,8 @@ class QuickInputActionReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         when (intent.action) {
             QuickInputNotificationManager.ACTION_QUICK_INPUT -> {
-                handleQuickInput(context, intent)
+                val pendingResult = goAsync()
+                handleQuickInput(context, intent, pendingResult)
             }
         }
     }
@@ -40,33 +41,42 @@ class QuickInputActionReceiver : BroadcastReceiver() {
     /**
      * 处理快捷输入
      */
-    private fun handleQuickInput(context: Context, intent: Intent) {
+    private fun handleQuickInput(
+        context: Context,
+        intent: Intent,
+        pendingResult: BroadcastReceiver.PendingResult
+    ) {
         val text = getTextFromIntent(intent)
         
         if (text.isNullOrBlank()) {
             showErrorToast(context, context.getString(R.string.quick_input_error_empty))
             quickInputManager.updateQuickInputNotification()
+            pendingResult.finish()
             return
         }
         
         // 使用协程处理异步任务创建
         scope.launch {
-            val result = createQuickTaskUseCase(text)
-            
-            result.onSuccess { taskId ->
-                showSuccessToast(context, text)
-                quickInputManager.updateQuickInputNotification()
-            }.onFailure { error ->
-                val errorMessage = when {
-                    error.message?.contains("empty") == true -> 
-                        context.getString(R.string.quick_input_error_empty)
-                    error.message?.contains("too long") == true -> 
-                        context.getString(R.string.quick_input_error_too_long)
-                    else -> 
-                        context.getString(R.string.quick_input_error_generic)
+            try {
+                val result = createQuickTaskUseCase(text)
+
+                result.onSuccess {
+                    showSuccessToast(context, text)
+                    quickInputManager.updateQuickInputNotification()
+                }.onFailure { error ->
+                    val errorMessage = when {
+                        error.message?.contains("empty") == true ->
+                            context.getString(R.string.quick_input_error_empty)
+                        error.message?.contains("too long") == true ->
+                            context.getString(R.string.quick_input_error_too_long)
+                        else ->
+                            context.getString(R.string.quick_input_error_generic)
+                    }
+                    showErrorToast(context, errorMessage)
+                    quickInputManager.updateQuickInputNotification()
                 }
-                showErrorToast(context, errorMessage)
-                quickInputManager.updateQuickInputNotification()
+            } finally {
+                pendingResult.finish()
             }
         }
     }

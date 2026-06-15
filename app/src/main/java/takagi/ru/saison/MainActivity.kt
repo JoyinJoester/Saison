@@ -231,6 +231,26 @@ fun SaisonApp(
                         launchSingleTop = true
                     }
                 }
+                "task_detail" -> {
+                    navController.navigate(Screen.TaskPreview.createRoute(widgetTaskId)) {
+                        launchSingleTop = true
+                    }
+                }
+                "course_detail" -> {
+                    navController.navigate(Screen.Course.route) {
+                        launchSingleTop = true
+                    }
+                }
+                "pomodoro" -> {
+                    navController.navigate(Screen.Pomodoro.route) {
+                        launchSingleTop = true
+                    }
+                }
+                "task_list" -> {
+                    navController.navigate(Screen.Tasks.route) {
+                        launchSingleTop = true
+                    }
+                }
             }
             onWidgetNavigationHandled()
         }

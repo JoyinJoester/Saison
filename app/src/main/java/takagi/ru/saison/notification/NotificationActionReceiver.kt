@@ -30,38 +30,43 @@ class NotificationActionReceiver : BroadcastReceiver() {
         
         const val EXTRA_TASK_ID = "extra_task_id"
         const val EXTRA_COURSE_ID = "extra_course_id"
+        const val EXTRA_ITEM_ID = "extra_item_id"
         const val EXTRA_NOTIFICATION_TYPE = "extra_notification_type"
     }
     
     override fun onReceive(context: Context, intent: Intent) {
-        when (intent.action) {
-            ACTION_MARK_COMPLETE -> {
-                val taskId = intent.getLongExtra(EXTRA_TASK_ID, -1)
-                if (taskId != -1L) {
-                    scope.launch {
-                        actionHandler.handleMarkAsComplete(taskId)
+        val pendingResult = goAsync()
+        scope.launch {
+            try {
+                when (intent.action) {
+                    ACTION_MARK_COMPLETE -> {
+                        val taskId = intent.getLongExtra(EXTRA_TASK_ID, -1)
+                        if (taskId != -1L) {
+                            actionHandler.handleMarkAsComplete(taskId)
+                        }
+                    }
+
+                    ACTION_SNOOZE -> {
+                        val taskId = intent.getLongExtra(EXTRA_TASK_ID, -1)
+                        if (taskId != -1L) {
+                            actionHandler.handleSnooze(taskId)
+                        }
+                    }
+
+                    ACTION_VIEW_DETAILS -> {
+                        val itemId = intent.getLongExtra(
+                            EXTRA_ITEM_ID,
+                            intent.getLongExtra(EXTRA_TASK_ID, intent.getLongExtra(EXTRA_COURSE_ID, -1))
+                        )
+                        val typeOrdinal = intent.getIntExtra(EXTRA_NOTIFICATION_TYPE, -1)
+                        val type = NotificationType.values().getOrNull(typeOrdinal)
+                        if (itemId != -1L && type != null) {
+                            actionHandler.handleViewDetails(itemId, type)
+                        }
                     }
                 }
-            }
-            
-            ACTION_SNOOZE -> {
-                val taskId = intent.getLongExtra(EXTRA_TASK_ID, -1)
-                if (taskId != -1L) {
-                    scope.launch {
-                        actionHandler.handleSnooze(taskId)
-                    }
-                }
-            }
-            
-            ACTION_VIEW_DETAILS -> {
-                val itemId = intent.getLongExtra(EXTRA_TASK_ID, -1)
-                val typeOrdinal = intent.getIntExtra(EXTRA_NOTIFICATION_TYPE, -1)
-                if (itemId != -1L && typeOrdinal != -1) {
-                    val type = NotificationType.values()[typeOrdinal]
-                    scope.launch {
-                        actionHandler.handleViewDetails(itemId, type)
-                    }
-                }
+            } finally {
+                pendingResult.finish()
             }
         }
     }

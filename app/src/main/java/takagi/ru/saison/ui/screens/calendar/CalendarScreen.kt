@@ -730,6 +730,15 @@ fun TaskItem(
                         color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
                     )
                 }
+                task.reminderTime?.let {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
+                    Text(
+                        text = "提醒: ${it.format(formatter)}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
+                    )
+                }
             }
         }
     }

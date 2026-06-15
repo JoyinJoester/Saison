@@ -244,9 +244,6 @@ fun SaisonNavHost(
                         navController.popBackStack()
                     }
                 },
-                onNavigateToBottomNavSettings = {
-                    navController.navigate(Screen.BottomNavSettings.route)
-                },
                 onNavigateToNotificationSettings = {
                     navController.navigate(Screen.NotificationSettings.route)
                 },

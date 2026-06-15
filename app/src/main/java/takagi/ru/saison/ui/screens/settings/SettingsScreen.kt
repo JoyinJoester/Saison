@@ -1,51 +1,58 @@
 package takagi.ru.saison.ui.screens.settings
 
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
-import androidx.compose.ui.draw.alpha
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.role
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Backup
+import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.ImportExport
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.ViewWeek
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import kotlinx.coroutines.launch
 import takagi.ru.saison.R
-import takagi.ru.saison.data.local.datastore.SeasonalTheme
+import takagi.ru.saison.ui.screens.settings.components.SettingsItem
+import takagi.ru.saison.ui.screens.settings.components.SettingsSection
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     viewModel: SettingsViewModel = hiltViewModel(),
     onNavigateBack: () -> Unit = {},
-    onNavigateToBottomNavSettings: () -> Unit = {},
     onNavigateToNotificationSettings: () -> Unit = {},
     onNavigateToWebDavBackup: () -> Unit = {},
     onNavigateToLocalExportImport: () -> Unit = {},
     onNavigateToSaisonPlus: () -> Unit = {},
-    onNavigateToImportPreview: (android.net.Uri, Long) -> Unit = { _, _ -> },
-    onNavigateToExport: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val currentTheme by viewModel.currentTheme.collectAsState()
@@ -53,33 +60,19 @@ fun SettingsScreen(
     val currentLanguage by viewModel.currentLanguage.collectAsState()
     val notificationsEnabled by viewModel.notificationsEnabled.collectAsState()
     val isPlusActivated by viewModel.isPlusActivated.collectAsState()
-    
+
     var showThemeBottomSheet by remember { mutableStateOf(false) }
     var showThemeModeDialog by remember { mutableStateOf(false) }
     var showBottomNavBottomSheet by remember { mutableStateOf(false) }
     var showLanguageDialog by remember { mutableStateOf(false) }
     var showAboutDialog by remember { mutableStateOf(false) }
-    
-    // 获取 Context
+
     val context = androidx.compose.ui.platform.LocalContext.current
-    
-    // Snackbar 支持
     val snackbarHostState = remember { SnackbarHostState() }
-    
-    // 文件选择器 - 用于导入JSON文件
     val coroutineScope = rememberCoroutineScope()
-    val importLauncher = rememberLauncherForActivityResult(
-        contract = androidx.activity.result.contract.ActivityResultContracts.OpenDocument()
-    ) { uri: android.net.Uri? ->
-        uri?.let {
-            // 导航到导入预览界面，传递Uri
-            onNavigateToImportPreview(it, 0L) // semesterId参数不再使用
-        }
-    }
-    
-    // 文件选择器 - 用于导出JSON文件
+
     val exportLauncher = rememberLauncherForActivityResult(
-        contract = androidx.activity.result.contract.ActivityResultContracts.CreateDocument("application/json")
+        contract = ActivityResultContracts.CreateDocument("application/json")
     ) { uri: android.net.Uri? ->
         uri?.let {
             coroutineScope.launch {
@@ -90,12 +83,10 @@ fun SettingsScreen(
             }
         }
     }
-    
-    // 获取字符串资源（在 Composable 上下文中）
+
     val confirmText = stringResource(R.string.common_action_confirm)
-    
-    // 观察 UI 事件
     val scope = rememberCoroutineScope()
+
     LaunchedEffect(Unit) {
         viewModel.uiEvent.collect { event ->
             when (event) {
@@ -117,7 +108,6 @@ fun SettingsScreen(
                     }
                 }
                 is SettingsUiEvent.RestartRequired -> {
-                    // 重新创建 Activity 以应用语言更改
                     android.util.Log.d("SettingsScreen", "RestartRequired event received")
                     val activity = context as? android.app.Activity
                     android.util.Log.d("SettingsScreen", "Activity: $activity")
@@ -130,7 +120,7 @@ fun SettingsScreen(
             }
         }
     }
-    
+
     Scaffold(
         contentWindowInsets = WindowInsets(0.dp),
         topBar = {
@@ -138,7 +128,10 @@ fun SettingsScreen(
                 title = { Text(stringResource(R.string.settings_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.cd_back))
+                        Icon(
+                            Icons.Default.ArrowBack,
+                            contentDescription = stringResource(R.string.cd_back)
+                        )
                     }
                 }
             )
@@ -154,24 +147,19 @@ fun SettingsScreen(
                 .padding(horizontal = 16.dp)
                 .verticalScroll(rememberScrollState())
         ) {
-            // Saison Plus 卡片
-            val isPlusActivated by viewModel.isPlusActivated.collectAsState()
             takagi.ru.saison.ui.components.SaisonPlusCard(
                 isPlusActivated = isPlusActivated,
                 onClick = onNavigateToSaisonPlus
             )
-            
-            // 数据与同步设置
+
             SettingsSection(title = stringResource(R.string.settings_section_data_sync)) {
-                // 本地导出导入 - 所有用户可用
                 SettingsItem(
                     icon = Icons.Default.ImportExport,
                     title = stringResource(R.string.local_export_import_title),
                     subtitle = stringResource(R.string.local_export_import_subtitle),
                     onClick = onNavigateToLocalExportImport
                 )
-                
-                // WebDAV 备份 - 仅 Plus 会员可见
+
                 if (isPlusActivated) {
                     SettingsItem(
                         icon = Icons.Default.Backup,
@@ -181,8 +169,7 @@ fun SettingsScreen(
                     )
                 }
             }
-            
-            // 外观设置
+
             SettingsSection(title = stringResource(R.string.settings_section_appearance)) {
                 SettingsItem(
                     icon = Icons.Default.Palette,
@@ -190,14 +177,14 @@ fun SettingsScreen(
                     subtitle = getThemeName(currentTheme),
                     onClick = { showThemeBottomSheet = true }
                 )
-                
+
                 SettingsItem(
                     icon = Icons.Default.DarkMode,
                     title = stringResource(R.string.settings_theme_mode_title),
                     subtitle = getThemeModeName(themeMode),
                     onClick = { showThemeModeDialog = true }
                 )
-                
+
                 SettingsItem(
                     icon = Icons.Default.ViewWeek,
                     title = stringResource(R.string.settings_bottom_nav_title),
@@ -205,18 +192,7 @@ fun SettingsScreen(
                     onClick = { showBottomNavBottomSheet = true }
                 )
             }
-            
-            // 语言设置 - 暂时隐藏，仅支持中文
-            // SettingsSection(title = stringResource(R.string.settings_section_language)) {
-            //     SettingsItem(
-            //         icon = Icons.Default.Language,
-            //         title = stringResource(R.string.settings_language_title),
-            //         subtitle = getLanguageName(currentLanguage),
-            //         onClick = { showLanguageDialog = true }
-            //     )
-            // }
-            
-            // 通知设置
+
             SettingsSection(title = stringResource(R.string.settings_section_notifications)) {
                 SettingsItem(
                     icon = Icons.Default.Notifications,
@@ -229,8 +205,7 @@ fun SettingsScreen(
                     onClick = onNavigateToNotificationSettings
                 )
             }
-            
-            // 关于
+
             SettingsSection(title = stringResource(R.string.settings_section_about)) {
                 SettingsItem(
                     icon = Icons.Default.Info,
@@ -238,7 +213,7 @@ fun SettingsScreen(
                     subtitle = stringResource(R.string.settings_about_subtitle),
                     onClick = { showAboutDialog = true }
                 )
-                
+
                 SettingsItem(
                     icon = Icons.Default.Description,
                     title = stringResource(R.string.settings_licenses_title),
@@ -248,8 +223,7 @@ fun SettingsScreen(
             }
         }
     }
-    
-    // 主题选择 Bottom Sheet
+
     if (showThemeBottomSheet) {
         ThemeBottomSheet(
             currentTheme = currentTheme,
@@ -261,8 +235,7 @@ fun SettingsScreen(
             onDismiss = { showThemeBottomSheet = false }
         )
     }
-    
-    // 主题模式选择对话框
+
     if (showThemeModeDialog) {
         ThemeModeSelectionDialog(
             currentMode = themeMode,
@@ -272,16 +245,14 @@ fun SettingsScreen(
             onDismiss = { showThemeModeDialog = false }
         )
     }
-    
-    // 底部导航栏设置 Bottom Sheet
+
     if (showBottomNavBottomSheet) {
         BottomNavBottomSheet(
             viewModel = viewModel,
             onDismiss = { showBottomNavBottomSheet = false }
         )
     }
-    
-    // 语言选择对话框
+
     if (showLanguageDialog) {
         LanguageSelectionDialog(
             currentLanguage = currentLanguage,
@@ -292,18 +263,15 @@ fun SettingsScreen(
             onDismiss = { showLanguageDialog = false }
         )
     }
-    
-    // 关于对话框
+
     if (showAboutDialog) {
         AboutDialog(onDismiss = { showAboutDialog = false })
     }
-    
-    // 导出选项对话框
+
     val showExportDialog by viewModel.showExportDialog.collectAsState()
-    val exportInProgress by viewModel.exportInProgress.collectAsState()
     val allSemesters by viewModel.allSemesters.collectAsState()
     val currentSemesterId by viewModel.currentSemesterId.collectAsState()
-    
+
     if (showExportDialog) {
         takagi.ru.saison.ui.components.ExportDialog(
             semesters = allSemesters,
@@ -312,1385 +280,17 @@ fun SettingsScreen(
             onExport = { options ->
                 viewModel.dismissExportDialog()
                 coroutineScope.launch {
-                    // 保存导出选项
                     viewModel.saveExportOptions(options.semesterIds)
-                    
-                    // 获取建议的文件名
+
                     val fileName = if (options.semesterIds.size == 1) {
                         viewModel.getSuggestedFileName(options.semesterIds.first())
                     } else {
                         "课程表_${System.currentTimeMillis()}.json"
                     }
-                    
-                    // 启动文件选择器
+
                     exportLauncher.launch(fileName)
                 }
             }
-        )
-    }
-}
-
-// 3.1 SettingsSection 组件 - 符合 M3 规范，卡片式布局
-@Composable
-private fun SettingsSection(
-    title: String,
-    content: @Composable ColumnScope.() -> Unit
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 16.dp, bottom = 8.dp)
-    ) {
-        Text(
-            text = title.uppercase(),
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp)
-        )
-        content()
-    }
-}
-
-// 3.2 SettingsItem 组件 - 符合 M3 规范，卡片式布局，支持无障碍
-@Composable
-private fun SettingsItem(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    title: String,
-    subtitle: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        shape = MaterialTheme.shapes.medium,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        ),
-        onClick = onClick
-    ) {
-        ListItem(
-            headlineContent = { Text(title) },
-            supportingContent = { Text(subtitle) },
-            leadingContent = {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = title
-                )
-            },
-            trailingContent = {
-                Icon(
-                    imageVector = Icons.Default.ChevronRight,
-                    contentDescription = null
-                )
-            },
-            modifier = Modifier.heightIn(min = 56.dp)
-        )
-    }
-}
-
-// 3.3 SettingsSwitchItem 组件 - 符合 M3 规范，卡片式布局，支持无障碍和动画
-@Composable
-private fun SettingsSwitchItem(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    title: String,
-    subtitle: String,
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
-    enabled: Boolean = true,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        shape = MaterialTheme.shapes.medium,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
-    ) {
-        ListItem(
-            headlineContent = { Text(title) },
-            supportingContent = { Text(subtitle) },
-            leadingContent = {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = title
-                )
-            },
-            trailingContent = {
-                Switch(
-                    checked = checked,
-                    onCheckedChange = onCheckedChange,
-                    enabled = enabled
-                )
-            },
-            modifier = Modifier.heightIn(min = 56.dp)
-        )
-    }
-}
-
-// 3.4 SettingsSliderItem 组件 - 符合 M3 规范
-@Composable
-private fun SettingsSliderItem(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    title: String,
-    value: Int,
-    onValueChange: (Int) -> Unit,
-    valueRange: IntRange,
-    valueFormatter: (Int) -> String = { "$it" },
-    modifier: Modifier = Modifier
-) {
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp)
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = title,
-                modifier = Modifier.padding(end = 16.dp)
-            )
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.bodyLarge
-                )
-                Text(
-                    text = valueFormatter(value),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
-        }
-        Slider(
-            value = value.toFloat(),
-            onValueChange = { onValueChange(it.toInt()) },
-            valueRange = valueRange.first.toFloat()..valueRange.last.toFloat(),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 8.dp)
-        )
-    }
-}
-
-// 4.1 ThemePreviewCard 组件
-@Composable
-private fun ThemePreviewCard(
-    theme: SeasonalTheme,
-    themeName: String,
-    isSelected: Boolean,
-    isPremium: Boolean = false,
-    isPlusActivated: Boolean = true,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    // 会员主题且未激活时使用半透明
-    val alpha = if (isPremium && !isPlusActivated) 0.5f else 1f
-    
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .alpha(alpha),
-        colors = CardDefaults.cardColors(
-            containerColor = if (isSelected) 
-                MaterialTheme.colorScheme.primaryContainer 
-            else 
-                MaterialTheme.colorScheme.surface
-        ),
-        border = if (isSelected) 
-            androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.primary) 
-        else null
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            RadioButton(
-                selected = isSelected,
-                onClick = onClick
-            )
-            Spacer(modifier = Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text(
-                        text = themeName,
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                    )
-                    // 显示 Plus 徽章
-                    if (isPremium) {
-                        takagi.ru.saison.ui.components.PlusBadge()
-                    }
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                // 主题颜色预览条 - 显示4种代表性颜色
-                val themeColors = getThemePreviewColors(theme)
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    // 主色
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(32.dp)
-                            .background(
-                                themeColors.primary,
-                                shape = MaterialTheme.shapes.small
-                            )
-                    )
-                    // 次色
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(32.dp)
-                            .background(
-                                themeColors.secondary,
-                                shape = MaterialTheme.shapes.small
-                            )
-                    )
-                    // 第三色
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(32.dp)
-                            .background(
-                                themeColors.tertiary,
-                                shape = MaterialTheme.shapes.small
-                            )
-                    )
-                    // 表面色
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(32.dp)
-                            .background(
-                                themeColors.surface,
-                                shape = MaterialTheme.shapes.small
-                            )
-                            .border(
-                                width = 1.dp,
-                                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
-                                shape = MaterialTheme.shapes.small
-                            )
-                    )
-                }
-            }
-        }
-    }
-}
-
-/**
- * ThemeBottomSheet - Material 3 Extended 风格的主题选择 Bottom Sheet
- * 
- * 从屏幕底部滑入的主题选择面板，提供流畅的交互体验和完整的 M3 设计规范支持。
- * 
- * 特性：
- * - 使用 ModalBottomSheet 实现从底部滑入的动画
- * - 支持点击背景遮罩、向下滑动和系统返回键关闭
- * - 响应式设计：自动适配手机和平板设备
- * - 无障碍支持：完整的 TalkBack 和语义化标签
- * - 性能优化：颜色缓存、状态优化、流畅动画
- * - 错误处理：主题应用失败时的异常处理
- * 
- * @param currentTheme 当前选中的主题
- * @param onThemeSelected 主题选择回调，参数为选中的主题
- * @param onDismiss Bottom Sheet 关闭回调
- * @param modifier 可选的 Modifier
- */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun ThemeBottomSheet(
-    currentTheme: SeasonalTheme,
-    isPlusActivated: Boolean,
-    onThemeSelected: (SeasonalTheme) -> Unit,
-    onNavigateToPlus: () -> Unit,
-    onDismiss: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val sheetState = rememberModalBottomSheetState(
-        skipPartiallyExpanded = false
-    )
-    val scope = rememberCoroutineScope()
-    val configuration = androidx.compose.ui.platform.LocalConfiguration.current
-    val context = androidx.compose.ui.platform.LocalContext.current
-    
-    // Plus 提示对话框状态
-    var showPlusDialog by remember { mutableStateOf(false) }
-    var selectedPremiumTheme by remember { mutableStateOf<SeasonalTheme?>(null) }
-    
-    // 响应式设计：判断是否为平板
-    val isTablet = configuration.screenWidthDp >= 600
-    
-    // 无障碍支持：宣布 Bottom Sheet 打开
-    LaunchedEffect(Unit) {
-        // 宣布主题选择已打开
-        val accessibilityManager = context.getSystemService(android.content.Context.ACCESSIBILITY_SERVICE) 
-            as? android.view.accessibility.AccessibilityManager
-        if (accessibilityManager?.isEnabled == true) {
-            val event = android.view.accessibility.AccessibilityEvent.obtain().apply {
-                eventType = android.view.accessibility.AccessibilityEvent.TYPE_ANNOUNCEMENT
-                text.add(context.getString(R.string.settings_theme_dialog_title))
-            }
-            accessibilityManager.sendAccessibilityEvent(event)
-        }
-    }
-    
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = sheetState,
-        containerColor = MaterialTheme.colorScheme.surface,
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(
-            topStart = 28.dp,
-            topEnd = 28.dp
-        ),
-        modifier = modifier
-            .then(
-                if (isTablet) {
-                    Modifier.widthIn(max = 600.dp)
-                } else {
-                    Modifier.fillMaxWidth()
-                }
-            )
-            .semantics {
-                contentDescription = context.getString(R.string.settings_theme_dialog_title)
-            }
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp)
-        ) {
-            // 标题
-            Text(
-                text = stringResource(R.string.settings_theme_dialog_title),
-                style = MaterialTheme.typography.headlineSmall,
-                modifier = Modifier.padding(vertical = 16.dp)
-            )
-            
-            // 主题列表 - 根据 Plus 状态排序
-            val sortedThemes = remember(isPlusActivated) {
-                val allThemes = SeasonalTheme.values().toList()
-                if (isPlusActivated) {
-                    // Plus 已激活：保持原始顺序
-                    allThemes
-                } else {
-                    // Plus 未激活：免费主题在前，会员主题在后
-                    allThemes.sortedBy { theme ->
-                        takagi.ru.saison.domain.model.plus.PremiumThemes.isPremiumTheme(theme)
-                    }
-                }
-            }
-            
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                contentPadding = PaddingValues(bottom = 16.dp)
-            ) {
-                items(
-                    items = sortedThemes,
-                    key = { it.name }
-                ) { theme ->
-                    // 使用 derivedStateOf 优化 isSelected 状态
-                    val isSelected by remember {
-                        derivedStateOf { theme == currentTheme }
-                    }
-                    
-                    val themeName = getThemeName(theme)
-                    val isPremium = takagi.ru.saison.domain.model.plus.PremiumThemes.isPremiumTheme(theme)
-                    
-                    ThemePreviewCard(
-                        theme = theme,
-                        themeName = themeName,
-                        isSelected = isSelected,
-                        isPremium = isPremium,
-                        isPlusActivated = isPlusActivated,
-                        onClick = {
-                            // 检查是否为会员主题且未激活
-                            if (isPremium && !isPlusActivated) {
-                                selectedPremiumTheme = theme
-                                showPlusDialog = true
-                            } else {
-                                // 错误处理：主题应用
-                                try {
-                                    onThemeSelected(theme)
-                                    
-                                    // 无障碍支持：宣布主题已选中
-                                    val accessibilityManager = context.getSystemService(android.content.Context.ACCESSIBILITY_SERVICE) 
-                                        as? android.view.accessibility.AccessibilityManager
-                                    if (accessibilityManager?.isEnabled == true) {
-                                        val event = android.view.accessibility.AccessibilityEvent.obtain().apply {
-                                            eventType = android.view.accessibility.AccessibilityEvent.TYPE_ANNOUNCEMENT
-                                            text.add("已选择${themeName}主题")
-                                        }
-                                        accessibilityManager.sendAccessibilityEvent(event)
-                                    }
-                                    
-                                    // 关闭 Bottom Sheet
-                                    scope.launch {
-                                        sheetState.hide()
-                                    }.invokeOnCompletion {
-                                        if (!sheetState.isVisible) {
-                                            onDismiss()
-                                        }
-                                    }
-                                } catch (e: Exception) {
-                                    // 错误处理将在 SettingsScreen 的 Snackbar 中显示
-                                    e.printStackTrace()
-                                }
-                            }
-                        }
-                    )
-                }
-            }
-        }
-    }
-    
-    // 显示 Plus 提示对话框
-    if (showPlusDialog && selectedPremiumTheme != null) {
-        takagi.ru.saison.ui.components.PlusRequiredDialog(
-            themeName = getThemeName(selectedPremiumTheme!!),
-            onNavigateToPlus = {
-                showPlusDialog = false
-                scope.launch {
-                    sheetState.hide()
-                }.invokeOnCompletion {
-                    if (!sheetState.isVisible) {
-                        onDismiss()
-                        onNavigateToPlus()
-                    }
-                }
-            },
-            onDismiss = {
-                showPlusDialog = false
-                selectedPremiumTheme = null
-            }
-        )
-    }
-}
-
-
-
-@Composable
-private fun LanguageSelectionDialog(
-    currentLanguage: String,
-    onLanguageSelected: (String) -> Unit,
-    onDismiss: () -> Unit
-) {
-    val languages = listOf(
-        "system" to stringResource(R.string.language_system),
-        "zh" to stringResource(R.string.language_zh_cn),
-        "en" to stringResource(R.string.language_en),
-        "ja" to stringResource(R.string.language_ja),
-        "vi" to stringResource(R.string.language_vi)
-    )
-    
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.settings_language_dialog_title)) },
-        text = {
-            Column {
-                languages.forEach { (code, name) ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onLanguageSelected(code) }
-                            .padding(vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        RadioButton(
-                            selected = code == currentLanguage,
-                            onClick = { onLanguageSelected(code) }
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(name)
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.common_action_close))
-            }
-        }
-    )
-}
-
-// 6.1 WebDavConfigDialog 对话框 - 增强版
-@Composable
-private fun WebDavConfigDialog(
-    viewModel: SettingsViewModel,
-    onDismiss: () -> Unit,
-    onSave: (String, String, String) -> Unit
-) {
-    var url by remember { mutableStateOf("") }
-    var username by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var passwordVisible by remember { mutableStateOf(false) }
-    var testResult by remember { mutableStateOf<String?>(null) }
-    var isTesting by remember { mutableStateOf(false) }
-    
-    val uiState by viewModel.uiState.collectAsState()
-    
-    // URL 格式验证
-    val isValidUrl = url.isBlank() || url.startsWith("http://") || url.startsWith("https://")
-    
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.settings_webdav_dialog_title)) },
-        text = {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                OutlinedTextField(
-                    value = url,
-                    onValueChange = { 
-                        url = it
-                        testResult = null
-                    },
-                    label = { Text(stringResource(R.string.settings_webdav_url_label)) },
-                    placeholder = { Text(stringResource(R.string.settings_webdav_url_placeholder)) },
-                    isError = !isValidUrl,
-                    supportingText = if (!isValidUrl) {
-                        { Text(stringResource(R.string.settings_webdav_url_error)) }
-                    } else null,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                
-                OutlinedTextField(
-                    value = username,
-                    onValueChange = { 
-                        username = it
-                        testResult = null
-                    },
-                    label = { Text(stringResource(R.string.settings_webdav_username_label)) },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                
-                OutlinedTextField(
-                    value = password,
-                    onValueChange = { 
-                        password = it
-                        testResult = null
-                    },
-                    label = { Text(stringResource(R.string.settings_webdav_password_label)) },
-                    visualTransformation = if (passwordVisible) 
-                        androidx.compose.ui.text.input.VisualTransformation.None 
-                    else 
-                        androidx.compose.ui.text.input.PasswordVisualTransformation(),
-                    trailingIcon = {
-                        IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                            Icon(
-                                imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                                contentDescription = stringResource(if (passwordVisible) R.string.cd_hide_password else R.string.cd_show_password)
-                            )
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                
-                // 测试连接按钮
-                Button(
-                    onClick = {
-                        isTesting = true
-                        viewModel.testWebDavConnection(url, username, password)
-                    },
-                    enabled = url.isNotBlank() && username.isNotBlank() && isValidUrl && !isTesting,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    if (isTesting && uiState is SettingsUiState.Loading) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(16.dp),
-                            strokeWidth = 2.dp
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                    }
-                    Text(stringResource(R.string.settings_webdav_test_button))
-                }
-                
-                // 显示测试结果
-                when (uiState) {
-                    is SettingsUiState.Success -> {
-                        isTesting = false
-                        Text(
-                            text = stringResource(R.string.settings_webdav_test_success),
-                            color = MaterialTheme.colorScheme.primary,
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    }
-                    is SettingsUiState.Error -> {
-                        isTesting = false
-                        Text(
-                            text = stringResource(R.string.settings_webdav_test_error, (uiState as SettingsUiState.Error).message),
-                            color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    }
-                    else -> {}
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = { onSave(url, username, password) },
-                enabled = url.isNotBlank() && username.isNotBlank() && isValidUrl
-            ) {
-                Text(stringResource(R.string.action_save))
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.action_cancel))
-            }
-        }
-    )
-}
-
-@Composable
-private fun AboutDialog(onDismiss: () -> Unit) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("关于 Saison") },
-        text = {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Text(
-                    text = "Saison 任务管理应用",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                Text("版本: 1.0.0")
-                Text("一款任务管理应用，支持日历、课程表、番茄钟等功能，欢迎大家使用")
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "© 2025 Saison",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text("关闭")
-            }
-        }
-    )
-}
-
-@Composable
-private fun getThemeName(theme: SeasonalTheme): String {
-    return when (theme) {
-        SeasonalTheme.DYNAMIC -> stringResource(R.string.theme_dynamic)
-        SeasonalTheme.AUTO_SEASONAL -> stringResource(R.string.theme_auto_seasonal)
-        SeasonalTheme.SAKURA -> stringResource(R.string.theme_sakura)
-        SeasonalTheme.MINT -> stringResource(R.string.theme_mint)
-        SeasonalTheme.AMBER -> stringResource(R.string.theme_amber)
-        SeasonalTheme.SNOW -> stringResource(R.string.theme_snow)
-        SeasonalTheme.RAIN -> stringResource(R.string.theme_rain)
-        SeasonalTheme.MAPLE -> stringResource(R.string.theme_maple)
-        SeasonalTheme.OCEAN -> stringResource(R.string.theme_ocean)
-        SeasonalTheme.SUNSET -> stringResource(R.string.theme_sunset)
-        SeasonalTheme.FOREST -> stringResource(R.string.theme_forest)
-        SeasonalTheme.LAVENDER -> stringResource(R.string.theme_lavender)
-        SeasonalTheme.DESERT -> stringResource(R.string.theme_desert)
-        SeasonalTheme.AURORA -> stringResource(R.string.theme_aurora)
-    }
-}
-
-private fun getLanguageName(code: String): String {
-    return when (code) {
-        "system" -> "跟随系统"
-        "zh" -> "简体中文"
-        "en" -> "English"
-        "ja" -> "日本語"
-        "vi" -> "Tiếng Việt"
-        else -> "跟随系统"
-    }
-}
-
-
-// 数据类用于主题颜色预览
-private data class ThemePreviewColors(
-    val primary: androidx.compose.ui.graphics.Color,
-    val secondary: androidx.compose.ui.graphics.Color,
-    val tertiary: androidx.compose.ui.graphics.Color,
-    val surface: androidx.compose.ui.graphics.Color
-)
-
-// 获取每个主题的预览颜色
-@Composable
-private fun getThemePreviewColors(theme: takagi.ru.saison.data.local.datastore.SeasonalTheme): ThemePreviewColors {
-    val context = LocalContext.current
-    val darkTheme = androidx.compose.foundation.isSystemInDarkTheme()
-    
-    return when (theme) {
-        takagi.ru.saison.data.local.datastore.SeasonalTheme.DYNAMIC -> {
-            // 在 Android 12+ 上使用实际的动态颜色
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-                val dynamicScheme = if (darkTheme) {
-                    androidx.compose.material3.dynamicDarkColorScheme(context)
-                } else {
-                    androidx.compose.material3.dynamicLightColorScheme(context)
-                }
-                ThemePreviewColors(
-                    primary = dynamicScheme.primary,
-                    secondary = dynamicScheme.secondary,
-                    tertiary = dynamicScheme.tertiary,
-                    surface = dynamicScheme.surfaceVariant
-                )
-            } else {
-                // Android 12 以下使用默认颜色
-                ThemePreviewColors(
-                    primary = takagi.ru.saison.ui.theme.Purple40,
-                    secondary = takagi.ru.saison.ui.theme.PurpleGrey40,
-                    tertiary = takagi.ru.saison.ui.theme.Pink40,
-                    surface = androidx.compose.ui.graphics.Color(0xFFFFFBFE)
-                )
-            }
-        }
-        takagi.ru.saison.data.local.datastore.SeasonalTheme.AUTO_SEASONAL -> {
-            // 显示当前季节的颜色
-            val currentSeasonTheme = takagi.ru.saison.util.SeasonHelper.getCurrentSeasonTheme()
-            getThemePreviewColors(currentSeasonTheme)
-        }
-        takagi.ru.saison.data.local.datastore.SeasonalTheme.SAKURA -> ThemePreviewColors(
-            primary = takagi.ru.saison.ui.theme.SakuraPrimary,
-            secondary = takagi.ru.saison.ui.theme.SakuraSecondary,
-            tertiary = takagi.ru.saison.ui.theme.SakuraTertiary,
-            surface = takagi.ru.saison.ui.theme.SakuraSurfaceVariant
-        )
-        takagi.ru.saison.data.local.datastore.SeasonalTheme.MINT -> ThemePreviewColors(
-            primary = takagi.ru.saison.ui.theme.MintPrimary,
-            secondary = takagi.ru.saison.ui.theme.MintSecondary,
-            tertiary = takagi.ru.saison.ui.theme.MintTertiary,
-            surface = takagi.ru.saison.ui.theme.MintSurfaceVariant
-        )
-        takagi.ru.saison.data.local.datastore.SeasonalTheme.AMBER -> ThemePreviewColors(
-            primary = takagi.ru.saison.ui.theme.AmberPrimary,
-            secondary = takagi.ru.saison.ui.theme.AmberSecondary,
-            tertiary = takagi.ru.saison.ui.theme.AmberTertiary,
-            surface = takagi.ru.saison.ui.theme.AmberSurfaceVariant
-        )
-        takagi.ru.saison.data.local.datastore.SeasonalTheme.SNOW -> ThemePreviewColors(
-            primary = takagi.ru.saison.ui.theme.SnowPrimary,
-            secondary = takagi.ru.saison.ui.theme.SnowSecondary,
-            tertiary = takagi.ru.saison.ui.theme.SnowTertiary,
-            surface = takagi.ru.saison.ui.theme.SnowSurfaceVariant
-        )
-        takagi.ru.saison.data.local.datastore.SeasonalTheme.RAIN -> ThemePreviewColors(
-            primary = takagi.ru.saison.ui.theme.RainPrimary,
-            secondary = takagi.ru.saison.ui.theme.RainSecondary,
-            tertiary = takagi.ru.saison.ui.theme.RainTertiary,
-            surface = takagi.ru.saison.ui.theme.RainSurfaceVariant
-        )
-        takagi.ru.saison.data.local.datastore.SeasonalTheme.MAPLE -> ThemePreviewColors(
-            primary = takagi.ru.saison.ui.theme.MaplePrimary,
-            secondary = takagi.ru.saison.ui.theme.MapleSecondary,
-            tertiary = takagi.ru.saison.ui.theme.MapleTertiary,
-            surface = takagi.ru.saison.ui.theme.MapleSurfaceVariant
-        )
-        takagi.ru.saison.data.local.datastore.SeasonalTheme.OCEAN -> ThemePreviewColors(
-            primary = takagi.ru.saison.ui.theme.OceanPrimary,
-            secondary = takagi.ru.saison.ui.theme.OceanSecondary,
-            tertiary = takagi.ru.saison.ui.theme.OceanTertiary,
-            surface = takagi.ru.saison.ui.theme.OceanSurfaceVariant
-        )
-        takagi.ru.saison.data.local.datastore.SeasonalTheme.SUNSET -> ThemePreviewColors(
-            primary = takagi.ru.saison.ui.theme.SunsetPrimary,
-            secondary = takagi.ru.saison.ui.theme.SunsetSecondary,
-            tertiary = takagi.ru.saison.ui.theme.SunsetTertiary,
-            surface = takagi.ru.saison.ui.theme.SunsetSurfaceVariant
-        )
-        takagi.ru.saison.data.local.datastore.SeasonalTheme.FOREST -> ThemePreviewColors(
-            primary = takagi.ru.saison.ui.theme.ForestPrimary,
-            secondary = takagi.ru.saison.ui.theme.ForestSecondary,
-            tertiary = takagi.ru.saison.ui.theme.ForestTertiary,
-            surface = takagi.ru.saison.ui.theme.ForestSurfaceVariant
-        )
-        takagi.ru.saison.data.local.datastore.SeasonalTheme.LAVENDER -> ThemePreviewColors(
-            primary = takagi.ru.saison.ui.theme.LavenderPrimary,
-            secondary = takagi.ru.saison.ui.theme.LavenderSecondary,
-            tertiary = takagi.ru.saison.ui.theme.LavenderTertiary,
-            surface = takagi.ru.saison.ui.theme.LavenderSurfaceVariant
-        )
-        takagi.ru.saison.data.local.datastore.SeasonalTheme.DESERT -> ThemePreviewColors(
-            primary = takagi.ru.saison.ui.theme.DesertPrimary,
-            secondary = takagi.ru.saison.ui.theme.DesertSecondary,
-            tertiary = takagi.ru.saison.ui.theme.DesertTertiary,
-            surface = takagi.ru.saison.ui.theme.DesertSurfaceVariant
-        )
-        takagi.ru.saison.data.local.datastore.SeasonalTheme.AURORA -> ThemePreviewColors(
-            primary = takagi.ru.saison.ui.theme.AuroraPrimary,
-            secondary = takagi.ru.saison.ui.theme.AuroraSecondary,
-            tertiary = takagi.ru.saison.ui.theme.AuroraTertiary,
-            surface = takagi.ru.saison.ui.theme.AuroraSurfaceVariant
-        )
-    }
-}
-
-
-@Composable
-private fun RestartAppDialog(
-    onConfirm: () -> Unit,
-    onDismiss: () -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("重启应用") },
-        text = {
-            Text("语言设置已更改，需要重启应用才能生效。是否立即重启？")
-        },
-        confirmButton = {
-            TextButton(onClick = onConfirm) {
-                Text("立即重启")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("稍后")
-            }
-        }
-    )
-}
-
-
-/**
- * BottomNavBottomSheet - 底部导航栏设置 Bottom Sheet
- * 
- * 从屏幕底部滑入的底部导航栏设置面板，用户可以自定义显示的项目和顺序。
- */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun BottomNavBottomSheet(
-    viewModel: SettingsViewModel,
-    onDismiss: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val bottomNavVisibility by viewModel.bottomNavVisibility.collectAsState()
-    val bottomNavOrder by viewModel.bottomNavOrder.collectAsState()
-    
-    val sheetState = rememberModalBottomSheetState(
-        skipPartiallyExpanded = true
-    )
-    val scope = rememberCoroutineScope()
-    val configuration = LocalConfiguration.current
-    val context = LocalContext.current
-    
-    // 响应式设计：判断是否为平板
-    val isTablet = configuration.screenWidthDp >= 600
-    
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = sheetState,
-        containerColor = MaterialTheme.colorScheme.surface,
-        shape = RoundedCornerShape(
-            topStart = 28.dp,
-            topEnd = 28.dp
-        ),
-        modifier = modifier
-            .then(
-                if (isTablet) {
-                    Modifier.widthIn(max = 600.dp)
-                } else {
-                    Modifier.fillMaxWidth()
-                }
-            )
-            .semantics {
-                contentDescription = "底部导航栏设置"
-            }
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp)
-        ) {
-            // 标题
-            Text(
-                text = "底部导航栏",
-                style = MaterialTheme.typography.headlineSmall,
-                modifier = Modifier.padding(vertical = 16.dp)
-            )
-            
-            // 提示文字
-            Text(
-                text = "自定义底部导航栏显示的项目和顺序。至少保留一个可见项。",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 16.dp)
-            )
-            
-            // 导航项列表
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                contentPadding = PaddingValues(bottom = 16.dp)
-            ) {
-                val visibleCount = bottomNavVisibility.visibleCount()
-                
-                itemsIndexed(
-                    items = bottomNavOrder,
-                    key = { _, tab -> tab.name }
-                ) { index, tab ->
-                    val isVisible = bottomNavVisibility.isVisible(tab)
-                    val switchEnabled = !isVisible || visibleCount > 1
-                    
-                    BottomNavConfigCard(
-                        icon = tab.toIcon(),
-                        title = tab.toLabel(),
-                        subtitle = if (isVisible) "已显示" else "已隐藏",
-                        checked = isVisible,
-                        switchEnabled = switchEnabled,
-                        canMoveUp = index > 0,
-                        canMoveDown = index < bottomNavOrder.lastIndex,
-                        onCheckedChange = { checked ->
-                            viewModel.updateBottomNavVisibility(tab, checked)
-                        },
-                        onMoveUp = {
-                            if (index > 0) {
-                                val newOrder = bottomNavOrder.toMutableList().apply {
-                                    add(index - 1, removeAt(index))
-                                }
-                                viewModel.updateBottomNavOrder(newOrder)
-                            }
-                        },
-                        onMoveDown = {
-                            if (index < bottomNavOrder.lastIndex) {
-                                val newOrder = bottomNavOrder.toMutableList().apply {
-                                    add(index + 1, removeAt(index))
-                                }
-                                viewModel.updateBottomNavOrder(newOrder)
-                            }
-                        }
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun BottomNavConfigCard(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    title: String,
-    subtitle: String,
-    checked: Boolean,
-    switchEnabled: Boolean,
-    canMoveUp: Boolean,
-    canMoveDown: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
-    onMoveUp: () -> Unit,
-    onMoveDown: () -> Unit
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.medium,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // 图标
-            Icon(
-                imageVector = icon,
-                contentDescription = title,
-                modifier = Modifier.size(24.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            
-            Spacer(modifier = Modifier.width(16.dp))
-            
-            // 标题和副标题
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    text = subtitle,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            
-            // 上移按钮
-            IconButton(
-                onClick = onMoveUp,
-                enabled = canMoveUp
-            ) {
-                Icon(
-                    imageVector = Icons.Default.KeyboardArrowUp,
-                    contentDescription = "上移",
-                    tint = if (canMoveUp) 
-                        MaterialTheme.colorScheme.onSurfaceVariant 
-                    else 
-                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
-                )
-            }
-            
-            // 下移按钮
-            IconButton(
-                onClick = onMoveDown,
-                enabled = canMoveDown
-            ) {
-                Icon(
-                    imageVector = Icons.Default.KeyboardArrowDown,
-                    contentDescription = "下移",
-                    tint = if (canMoveDown) 
-                        MaterialTheme.colorScheme.onSurfaceVariant 
-                    else 
-                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
-                )
-            }
-            
-            // 开关
-            Switch(
-                checked = checked,
-                onCheckedChange = onCheckedChange,
-                enabled = switchEnabled
-            )
-        }
-    }
-}
-
-// 扩展函数：将 BottomNavTab 转换为图标
-private fun takagi.ru.saison.data.local.datastore.BottomNavTab.toIcon(): androidx.compose.ui.graphics.vector.ImageVector = when (this) {
-    takagi.ru.saison.data.local.datastore.BottomNavTab.COURSE -> Icons.Default.School
-    takagi.ru.saison.data.local.datastore.BottomNavTab.CALENDAR -> Icons.Default.CalendarToday
-    takagi.ru.saison.data.local.datastore.BottomNavTab.TASKS -> Icons.Default.CheckCircle
-    takagi.ru.saison.data.local.datastore.BottomNavTab.POMODORO -> Icons.Default.Timer
-    takagi.ru.saison.data.local.datastore.BottomNavTab.SUBSCRIPTION -> Icons.Default.Star
-    takagi.ru.saison.data.local.datastore.BottomNavTab.SETTINGS -> Icons.Default.Settings
-}
-
-// 扩展函数：将 BottomNavTab 转换为标签
-private fun takagi.ru.saison.data.local.datastore.BottomNavTab.toLabel(): String = when (this) {
-    takagi.ru.saison.data.local.datastore.BottomNavTab.COURSE -> "课程"
-    takagi.ru.saison.data.local.datastore.BottomNavTab.CALENDAR -> "日历"
-    takagi.ru.saison.data.local.datastore.BottomNavTab.TASKS -> "任务"
-    takagi.ru.saison.data.local.datastore.BottomNavTab.POMODORO -> "专注"
-    takagi.ru.saison.data.local.datastore.BottomNavTab.SUBSCRIPTION -> "订阅"
-    takagi.ru.saison.data.local.datastore.BottomNavTab.SETTINGS -> "设置"
-}
-
-
-/**
- * ThemeModeOptionCard - 主题模式选项卡片
- * 
- * 显示单个主题模式选项，包括 RadioButton、名称和描述
- */
-@Composable
-private fun ThemeModeOptionCard(
-    mode: takagi.ru.saison.data.local.datastore.ThemeMode,
-    isSelected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val modeName = stringResource(mode.displayNameRes)
-    val stateText = if (isSelected) "已选中" else "未选中"
-    
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
-        colors = CardDefaults.cardColors(
-            containerColor = if (isSelected) 
-                MaterialTheme.colorScheme.primaryContainer 
-            else 
-                MaterialTheme.colorScheme.surface
-        ),
-        border = if (isSelected) 
-            BorderStroke(2.dp, MaterialTheme.colorScheme.primary) 
-        else null
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            RadioButton(
-                selected = isSelected,
-                onClick = onClick,
-                modifier = Modifier.semantics {
-                    contentDescription = "$modeName, $stateText"
-                }
-            )
-            Spacer(modifier = Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = stringResource(mode.displayNameRes),
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                )
-                Text(
-                    text = stringResource(mode.descriptionRes),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
-    }
-}
-
-/**
- * ThemeModeSelectionDialog - 主题模式选择对话框
- * 
- * 显示三个主题模式选项供用户选择
- */
-@Composable
-fun ThemeModeSelectionDialog(
-    currentMode: takagi.ru.saison.data.local.datastore.ThemeMode,
-    onModeSelected: (takagi.ru.saison.data.local.datastore.ThemeMode) -> Unit,
-    onDismiss: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Text(
-                text = stringResource(R.string.settings_theme_mode_title),
-                style = MaterialTheme.typography.headlineSmall
-            )
-        },
-        text = {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                takagi.ru.saison.data.local.datastore.ThemeMode.values().forEach { mode ->
-                    ThemeModeOptionCard(
-                        mode = mode,
-                        isSelected = mode == currentMode,
-                        onClick = {
-                            onModeSelected(mode)
-                            onDismiss()
-                        }
-                    )
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.common_action_close))
-            }
-        },
-        modifier = modifier
-    )
-}
-
-/**
- * 获取主题模式的显示名称
- */
-@Composable
-fun getThemeModeName(mode: takagi.ru.saison.data.local.datastore.ThemeMode): String {
-    return stringResource(mode.displayNameRes)
-}
-
-
-/**
- * ExportOptionsDialog - 导出选项对话框
- * 
- * 允许用户选择导出范围和格式
- */
-@Composable
-fun ExportOptionsDialog(
-    onDismiss: () -> Unit,
-    onExport: (ExportOptions) -> Unit,
-    isExporting: Boolean = false,
-    modifier: Modifier = Modifier
-) {
-    var exportMode by remember { mutableStateOf(ExportMode.CURRENT_SEMESTER) }
-    var compatibilityMode by remember { mutableStateOf(false) }
-    
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Text(
-                text = stringResource(R.string.export_options_title),
-                style = MaterialTheme.typography.headlineSmall
-            )
-        },
-        text = {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                // 导出范围选择
-                Text(
-                    text = stringResource(R.string.export_scope),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    RadioButtonOption(
-                        selected = exportMode == ExportMode.CURRENT_SEMESTER,
-                        onClick = { exportMode = ExportMode.CURRENT_SEMESTER },
-                        text = stringResource(R.string.export_current_semester)
-                    )
-                    
-                    RadioButtonOption(
-                        selected = exportMode == ExportMode.ALL_SEMESTERS,
-                        onClick = { exportMode = ExportMode.ALL_SEMESTERS },
-                        text = stringResource(R.string.export_all_semesters)
-                    )
-                }
-                
-                Divider()
-                
-                // 导出格式选择
-                Text(
-                    text = stringResource(R.string.export_format),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant
-                    )
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { compatibilityMode = !compatibilityMode }
-                            .padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = stringResource(R.string.include_full_config),
-                                style = MaterialTheme.typography.bodyLarge
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = stringResource(R.string.include_full_config_desc),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Switch(
-                            checked = !compatibilityMode,
-                            onCheckedChange = { compatibilityMode = !it }
-                        )
-                    }
-                }
-                
-                if (compatibilityMode) {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
-                        )
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(12.dp),
-                            verticalAlignment = Alignment.Top
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Warning,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.error,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = stringResource(R.string.compatibility_mode_warning),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onErrorContainer
-                            )
-                        }
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    onExport(
-                        ExportOptions(
-                            mode = exportMode,
-                            compatibilityMode = compatibilityMode
-                        )
-                    )
-                },
-                enabled = !isExporting
-            ) {
-                if (isExporting) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(16.dp),
-                        strokeWidth = 2.dp,
-                        color = MaterialTheme.colorScheme.onPrimary
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                }
-                Text(
-                    if (isExporting) 
-                        stringResource(R.string.export_in_progress) 
-                    else 
-                        stringResource(R.string.export_button)
-                )
-            }
-        },
-        dismissButton = {
-            TextButton(
-                onClick = onDismiss,
-                enabled = !isExporting
-            ) {
-                Text(stringResource(R.string.action_cancel))
-            }
-        }
-    )
-}
-
-/**
- * RadioButtonOption - 单选按钮选项
- */
-@Composable
-private fun RadioButtonOption(
-    selected: Boolean,
-    onClick: () -> Unit,
-    text: String,
-    modifier: Modifier = Modifier
-) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        RadioButton(
-            selected = selected,
-            onClick = onClick
-        )
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(
-            text = text,
-            style = MaterialTheme.typography.bodyLarge
         )
     }
 }

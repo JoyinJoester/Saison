@@ -181,7 +181,8 @@ class TaskViewModel @Inject constructor(
         repeatType: String = "不重复",
         reminderEnabled: Boolean = false,
         weekDays: Set<java.time.DayOfWeek> = emptySet(),
-        categoryName: String? = null
+        categoryName: String? = null,
+        customReminderTime: LocalDateTime? = null
     ) {
         viewModelScope.launch {
             try {
@@ -223,8 +224,8 @@ class TaskViewModel @Inject constructor(
                 } else null
                 
                 // 设置提醒时间
-                val reminderTime = if (reminderEnabled && dueDateTime != null) {
-                    dueDateTime.minusHours(1) // 提前1小时提醒
+                val reminderTime = if (reminderEnabled) {
+                    customReminderTime ?: dueDateTime?.minusHours(1)
                 } else null
                 
                 val task = Task(

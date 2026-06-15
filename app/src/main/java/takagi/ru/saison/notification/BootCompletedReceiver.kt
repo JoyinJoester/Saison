@@ -6,6 +6,8 @@ import android.content.Intent
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -24,12 +26,18 @@ class BootCompletedReceiver : BroadcastReceiver() {
     
     @Inject
     lateinit var saisonNotificationManager: SaisonNotificationManager
+
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action == Intent.ACTION_BOOT_COMPLETED) {
-            // 在后台重新调度所有通知
-            CoroutineScope(Dispatchers.IO).launch {
-                rescheduleAllNotifications()
+            val pendingResult = goAsync()
+            scope.launch {
+                try {
+                    rescheduleAllNotifications()
+                } finally {
+                    pendingResult.finish()
+                }
             }
         }
     }
@@ -39,17 +47,15 @@ class BootCompletedReceiver : BroadcastReceiver() {
      */
     private suspend fun rescheduleAllNotifications() {
         // 重新调度所有未完成任务的提醒
-        taskRepository.getAllTasks().collect { tasks ->
-            tasks.filter { !it.isCompleted && it.dueDate != null }.forEach { task ->
+        taskRepository.getAllTasks().first()
+            .filter { !it.isCompleted && (it.dueDate != null || it.reminderTime != null) }
+            .forEach { task ->
                 saisonNotificationManager.scheduleTaskReminder(task)
             }
-        }
         
         // 重新调度所有课程的提醒
-        courseRepository.getAllCourses().collect { courses ->
-            courses.forEach { course ->
-                saisonNotificationManager.scheduleCourseReminder(course)
-            }
+        courseRepository.getAllCourses().first().forEach { course ->
+            saisonNotificationManager.scheduleCourseReminder(course)
         }
     }
 }

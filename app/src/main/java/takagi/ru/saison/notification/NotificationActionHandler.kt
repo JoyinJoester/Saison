@@ -3,6 +3,7 @@ package takagi.ru.saison.notification
 import android.content.Context
 import dagger.hilt.android.qualifiers.ApplicationContext
 import takagi.ru.saison.data.repository.TaskRepository
+import java.time.LocalDateTime
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -45,14 +46,13 @@ class NotificationActionHandler @Inject constructor(
                 // 取消当前提醒
                 notificationManager.cancelTaskReminder(taskId)
                 
-                // 计算新的提醒时间
-                val newDueDate = task.dueDate?.plusMinutes(delayMinutes.toLong())
-                if (newDueDate != null) {
-                    val updatedTask = task.copy(dueDate = newDueDate)
-                    // 重新调度提醒
-                    notificationManager.scheduleTaskReminder(updatedTask)
-                    android.util.Log.d("NotificationActionHandler", "Task $taskId snoozed for $delayMinutes minutes")
-                }
+                val newReminderTime = LocalDateTime.now().plusMinutes(delayMinutes.toLong())
+                val updatedTask = task.copy(
+                    reminderTime = newReminderTime,
+                    updatedAt = LocalDateTime.now()
+                )
+                taskRepository.updateTask(updatedTask)
+                android.util.Log.d("NotificationActionHandler", "Task $taskId snoozed for $delayMinutes minutes")
             }
         } catch (e: Exception) {
             android.util.Log.e("NotificationActionHandler", "Failed to snooze task", e)

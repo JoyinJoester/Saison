@@ -39,11 +39,8 @@ class NotificationBuilder @Inject constructor(
         val title = "任务提醒"
         val content = buildTaskContent(task)
         
-        val intent = Intent(context, Class.forName("takagi.ru.saison.MainActivity")).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-            putExtra("notification_type", NotificationType.TASK_REMINDER.name)
-            putExtra("task_id", task.id)
-        }
+        val intent = NotificationNavigationHandler(context)
+            .createNavigationIntent(NotificationType.TASK_REMINDER, task.id)
         
         val pendingIntent = PendingIntent.getActivity(
             context,
@@ -83,11 +80,8 @@ class NotificationBuilder @Inject constructor(
         val title = "课程提醒"
         val content = buildCourseContent(course, startTime)
         
-        val intent = Intent(context, Class.forName("takagi.ru.saison.MainActivity")).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-            putExtra("notification_type", NotificationType.COURSE_REMINDER.name)
-            putExtra("course_id", course.id)
-        }
+        val intent = NotificationNavigationHandler(context)
+            .createNavigationIntent(NotificationType.COURSE_REMINDER, course.id)
         
         val pendingIntent = PendingIntent.getActivity(
             context,
@@ -119,13 +113,10 @@ class NotificationBuilder @Inject constructor(
         val title = if (isWorkEnd) "工作时段结束" else "休息时段结束"
         val content = if (isWorkEnd) "该休息一下了！" else "休息结束，继续加油！"
         
-        val intent = Intent(context, Class.forName("takagi.ru.saison.MainActivity")).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-            putExtra("notification_type", if (isWorkEnd) 
-                NotificationType.POMODORO_WORK_END.name else 
-                NotificationType.POMODORO_BREAK_END.name)
-            putExtra("session_id", sessionId)
-        }
+        val intent = NotificationNavigationHandler(context).createNavigationIntent(
+            if (isWorkEnd) NotificationType.POMODORO_WORK_END else NotificationType.POMODORO_BREAK_END,
+            sessionId
+        )
         
         val pendingIntent = PendingIntent.getActivity(
             context,
@@ -156,10 +147,8 @@ class NotificationBuilder @Inject constructor(
         val title = "任务提醒"
         val content = "您有 ${tasks.size} 个任务即将到期"
         
-        val intent = Intent(context, Class.forName("takagi.ru.saison.MainActivity")).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-            putExtra("notification_type", NotificationType.TASK_SUMMARY.name)
-        }
+        val intent = NotificationNavigationHandler(context)
+            .createNavigationIntent(NotificationType.TASK_SUMMARY, 0L)
         
         val pendingIntent = PendingIntent.getActivity(
             context,
@@ -252,9 +241,9 @@ class NotificationBuilder @Inject constructor(
      * 构建"标记为完成"操作
      */
     private fun buildCompleteAction(taskId: Long): NotificationCompat.Action {
-        val intent = Intent(context, Class.forName("takagi.ru.saison.notification.NotificationActionReceiver")).apply {
-            action = "ACTION_COMPLETE_TASK"
-            putExtra("task_id", taskId)
+        val intent = Intent(context, NotificationActionReceiver::class.java).apply {
+            action = NotificationActionReceiver.ACTION_MARK_COMPLETE
+            putExtra(NotificationActionReceiver.EXTRA_TASK_ID, taskId)
         }
         
         val pendingIntent = PendingIntent.getBroadcast(
@@ -275,9 +264,9 @@ class NotificationBuilder @Inject constructor(
      * 构建"稍后提醒"操作
      */
     private fun buildSnoozeAction(taskId: Long): NotificationCompat.Action {
-        val intent = Intent(context, Class.forName("takagi.ru.saison.notification.NotificationActionReceiver")).apply {
-            action = "ACTION_SNOOZE_TASK"
-            putExtra("task_id", taskId)
+        val intent = Intent(context, NotificationActionReceiver::class.java).apply {
+            action = NotificationActionReceiver.ACTION_SNOOZE
+            putExtra(NotificationActionReceiver.EXTRA_TASK_ID, taskId)
         }
         
         val pendingIntent = PendingIntent.getBroadcast(
@@ -298,13 +287,9 @@ class NotificationBuilder @Inject constructor(
      * 构建"查看详情"操作
      */
     private fun buildViewDetailsAction(itemId: Long, type: NotificationType): NotificationCompat.Action {
-        val intent = Intent(context, Class.forName("takagi.ru.saison.notification.NotificationActionReceiver")).apply {
-            action = "ACTION_VIEW_DETAILS"
-            putExtra("item_id", itemId)
-            putExtra("notification_type", type.name)
-        }
-        
-        val pendingIntent = PendingIntent.getBroadcast(
+        val intent = NotificationNavigationHandler(context).createNavigationIntent(type, itemId)
+
+        val pendingIntent = PendingIntent.getActivity(
             context,
             itemId.toInt() + 20000,
             intent,

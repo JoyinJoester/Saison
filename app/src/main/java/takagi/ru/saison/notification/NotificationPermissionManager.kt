@@ -25,6 +25,7 @@ class NotificationPermissionManager @Inject constructor(
 ) {
     companion object {
         const val NOTIFICATION_PERMISSION_REQUEST_CODE = 1001
+        const val CALENDAR_PERMISSION_REQUEST_CODE = 1002
     }
     
     /**
@@ -61,6 +62,28 @@ class NotificationPermissionManager @Inject constructor(
             // Android 13 以下引导用户到系统设置
             openNotificationSettings(activity)
         }
+    }
+
+    fun checkCalendarPermission(): Boolean {
+        return ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.READ_CALENDAR
+        ) == PackageManager.PERMISSION_GRANTED &&
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.WRITE_CALENDAR
+            ) == PackageManager.PERMISSION_GRANTED
+    }
+
+    fun requestCalendarPermission(activity: Activity) {
+        ActivityCompat.requestPermissions(
+            activity,
+            arrayOf(
+                Manifest.permission.READ_CALENDAR,
+                Manifest.permission.WRITE_CALENDAR
+            ),
+            CALENDAR_PERMISSION_REQUEST_CODE
+        )
     }
     
     /**
@@ -116,6 +139,10 @@ class NotificationPermissionManager @Inject constructor(
         if (requestCode == NOTIFICATION_PERMISSION_REQUEST_CODE) {
             return grantResults.isNotEmpty() && 
                    grantResults[0] == PackageManager.PERMISSION_GRANTED
+        }
+        if (requestCode == CALENDAR_PERMISSION_REQUEST_CODE) {
+            return grantResults.isNotEmpty() &&
+                grantResults.all { it == PackageManager.PERMISSION_GRANTED }
         }
         return false
     }

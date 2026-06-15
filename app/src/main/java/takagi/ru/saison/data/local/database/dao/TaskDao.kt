@@ -35,7 +35,20 @@ interface TaskDao {
     @Query("SELECT * FROM tasks WHERE isCompleted = 1 AND parentTaskId IS NULL ORDER BY completedAt DESC")
     fun getCompletedTasks(): Flow<List<TaskEntity>>
     
-    @Query("SELECT * FROM tasks WHERE dueDate BETWEEN :startDate AND :endDate AND parentTaskId IS NULL ORDER BY dueDate ASC")
+    @Query(
+        """
+        SELECT * FROM tasks
+        WHERE parentTaskId IS NULL
+          AND (
+            dueDate BETWEEN :startDate AND :endDate
+            OR reminderTime BETWEEN :startDate AND :endDate
+          )
+        ORDER BY CASE
+            WHEN dueDate BETWEEN :startDate AND :endDate THEN dueDate
+            ELSE reminderTime
+        END ASC
+        """
+    )
     fun getTasksByDateRange(startDate: Long, endDate: Long): Flow<List<TaskEntity>>
     
     @Query("SELECT * FROM tasks WHERE categoryId = :categoryId AND parentTaskId IS NULL ORDER BY dueDate ASC")

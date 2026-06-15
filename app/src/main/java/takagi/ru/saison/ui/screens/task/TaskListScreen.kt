@@ -422,8 +422,8 @@ fun TaskListScreen(
                 tags = tags,
                 lastSelectedTag = selectedTag?.name,
                 onDismiss = { showNaturalLanguageDialog = false },
-                onTaskAdd = { title, dueDateTime, priority, tags, repeatType, reminderEnabled, weekDays, categoryName ->
-                    viewModel.createTask(title, dueDateTime, priority, tags, repeatType, reminderEnabled, weekDays, categoryName)
+                onTaskAdd = { title, dueDateTime, priority, tags, repeatType, reminderEnabled, weekDays, categoryName, customReminderTime ->
+                    viewModel.createTask(title, dueDateTime, priority, tags, repeatType, reminderEnabled, weekDays, categoryName, customReminderTime)
                     showNaturalLanguageDialog = false
                 },
                 onAddTag = { tagName ->

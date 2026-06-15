@@ -65,9 +65,10 @@ enum class BottomNavTab {
  */
 data class BottomNavVisibility(
     val course: Boolean = true,
+    val calendar: Boolean = true,
     val tasks: Boolean = true,
-    val pomodoro: Boolean = false,  // 默认隐藏
-    val subscription: Boolean = false,  // 默认隐藏
+    val pomodoro: Boolean = true,
+    val subscription: Boolean = true,
     val settings: Boolean = true  // 设置项始终可见，不可关闭
 ) {
     /**
@@ -75,7 +76,7 @@ data class BottomNavVisibility(
      */
     fun isVisible(tab: BottomNavTab): Boolean = when (tab) {
         BottomNavTab.COURSE -> course
-        BottomNavTab.CALENDAR -> true  // Calendar is always visible
+        BottomNavTab.CALENDAR -> calendar
         BottomNavTab.TASKS -> tasks
         BottomNavTab.POMODORO -> pomodoro
         BottomNavTab.SUBSCRIPTION -> subscription
@@ -86,7 +87,7 @@ data class BottomNavVisibility(
      * 计算可见项数量
      */
     fun visibleCount(): Int = listOf(
-        course, tasks, pomodoro, subscription, settings
+        course, calendar, tasks, pomodoro, subscription, settings
     ).count { it }
     
     /**
@@ -95,7 +96,7 @@ data class BottomNavVisibility(
     fun withVisibility(tab: BottomNavTab, visible: Boolean): BottomNavVisibility {
         return when (tab) {
             BottomNavTab.COURSE -> copy(course = visible)
-            BottomNavTab.CALENDAR -> this  // Calendar visibility cannot be changed
+            BottomNavTab.CALENDAR -> copy(calendar = visible)
             BottomNavTab.TASKS -> copy(tasks = visible)
             BottomNavTab.POMODORO -> copy(pomodoro = visible)
             BottomNavTab.SUBSCRIPTION -> copy(subscription = visible)

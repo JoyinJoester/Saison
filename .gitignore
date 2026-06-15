@@ -24,3 +24,6 @@ build/
 
 # Ignore release APKs
 app/release/*.apk
+
+# Reference project - do not commit
+Monica for Android/

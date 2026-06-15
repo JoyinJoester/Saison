@@ -50,7 +50,8 @@ class SettingsViewModel @Inject constructor(
     private val themeManager: ThemeManager,
     private val syncRepository: SyncRepository,
     private val exportCourseDataUseCase: takagi.ru.saison.domain.usecase.ExportCourseDataUseCase,
-    private val semesterRepository: takagi.ru.saison.data.repository.SemesterRepository
+    private val semesterRepository: takagi.ru.saison.data.repository.SemesterRepository,
+    private val taskRepository: takagi.ru.saison.data.repository.TaskRepository
 ) : ViewModel() {
     
     // UI State
@@ -256,6 +257,16 @@ class SettingsViewModel @Inject constructor(
                 }
             } catch (e: Exception) {
                 handleError(e)
+            }
+        }
+    }
+
+    fun syncSystemCalendarReminders() {
+        viewModelScope.launch {
+            try {
+                taskRepository.syncSystemCalendarReminders()
+            } catch (e: Exception) {
+                _uiEvent.emit(SettingsUiEvent.ShowError("同步系统日历失败: ${e.message}"))
             }
         }
     }

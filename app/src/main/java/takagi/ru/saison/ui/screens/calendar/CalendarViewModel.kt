@@ -151,7 +151,12 @@ class CalendarViewModel @Inject constructor(
         taskRepository.getAllTasks(),
         eventRepository.getAllEvents()
     ) { tasks, events ->
-        val taskDates = tasks.mapNotNull { it.dueDate?.toLocalDate() }.toSet()
+        val taskDates = tasks.flatMap { task ->
+            listOfNotNull(
+                task.dueDate?.toLocalDate(),
+                task.reminderTime?.toLocalDate()
+            )
+        }.toSet()
         val eventDates = events.map { it.eventDate.toLocalDate() }.toSet()
         taskDates + eventDates
     }.stateIn(viewModelScope, SharingStarted.Eagerly, emptySet())

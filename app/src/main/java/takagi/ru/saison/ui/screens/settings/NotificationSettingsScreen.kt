@@ -12,31 +12,38 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.core.app.NotificationManagerCompat
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import takagi.ru.saison.R
+import takagi.ru.saison.notification.NotificationChannelManager
 import takagi.ru.saison.notification.NotificationPermissionManager
+import takagi.ru.saison.notification.QuickInputNotificationManager
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NotificationSettingsScreen(
     viewModel: SettingsViewModel = hiltViewModel(),
-    permissionManager: NotificationPermissionManager = androidx.hilt.navigation.compose.hiltViewModel<SettingsViewModel>().run {
-        // 获取 NotificationPermissionManager 实例
-        val context = LocalContext.current
-        remember { NotificationPermissionManager(context) }
-    },
-    quickInputManager: takagi.ru.saison.notification.QuickInputNotificationManager = androidx.hilt.navigation.compose.hiltViewModel<SettingsViewModel>().run {
-        // 获取 QuickInputNotificationManager 实例
-        val context = LocalContext.current
-        val notificationManager = androidx.core.app.NotificationManagerCompat.from(context)
-        val channelManager = remember { takagi.ru.saison.notification.NotificationChannelManager(context) }
-        val permManager = remember { NotificationPermissionManager(context) }
-        remember { takagi.ru.saison.notification.QuickInputNotificationManager(context, notificationManager, channelManager, permManager) }
-    },
     onNavigateBack: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val appContext = context.applicationContext
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val permissionManager = remember(appContext) {
+        NotificationPermissionManager(appContext)
+    }
+    val quickInputManager = remember(appContext, permissionManager) {
+        QuickInputNotificationManager(
+            appContext,
+            NotificationManagerCompat.from(appContext),
+            NotificationChannelManager(appContext),
+            permissionManager
+        )
+    }
+
     val notificationsEnabled by viewModel.notificationsEnabled.collectAsState()
     val taskRemindersEnabled by viewModel.taskRemindersEnabled.collectAsState()
     val courseRemindersEnabled by viewModel.courseRemindersEnabled.collectAsState()
@@ -48,11 +55,39 @@ fun NotificationSettingsScreen(
     var hasNotificationPermission by remember { 
         mutableStateOf(permissionManager.checkNotificationPermission()) 
     }
+    var hasCalendarPermission by remember {
+        mutableStateOf(permissionManager.checkCalendarPermission())
+    }
+    var syncedCalendarPermissionSession by remember {
+        mutableStateOf(false)
+    }
     
-    // 定期检查权限状态
-    LaunchedEffect(Unit) {
-        kotlinx.coroutines.delay(500)
+    fun refreshPermissions() {
         hasNotificationPermission = permissionManager.checkNotificationPermission()
+        val calendarPermissionGranted = permissionManager.checkCalendarPermission()
+        hasCalendarPermission = calendarPermissionGranted
+        if (calendarPermissionGranted && !syncedCalendarPermissionSession) {
+            syncedCalendarPermissionSession = true
+            viewModel.syncSystemCalendarReminders()
+        } else if (!calendarPermissionGranted) {
+            syncedCalendarPermissionSession = false
+        }
+    }
+
+    LaunchedEffect(permissionManager) {
+        refreshPermissions()
+    }
+
+    DisposableEffect(lifecycleOwner, permissionManager) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                refreshPermissions()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
     }
     
     Scaffold(
@@ -123,6 +158,56 @@ fun NotificationSettingsScreen(
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Text("前往设置")
+                        }
+                    }
+                }
+            }
+
+            if (!hasCalendarPermission) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer
+                    )
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.CalendarMonth,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "系统日历权限未授予",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = "授权后，自定义任务提醒会同步到手机系统日历，由系统日历提醒。",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Button(
+                            onClick = {
+                                if (context is Activity) {
+                                    permissionManager.requestCalendarPermission(context)
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("授予日历权限")
                         }
                     }
                 }
